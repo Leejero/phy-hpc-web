@@ -31,30 +31,9 @@
 │   └── main.js         # 主脚本
 ├── data/
 │   └── slurm.json      # 集群监控数据
-├── .gitignore          # Git 忽略配置
+├── .gitignore          
 └── README.md           # 项目说明
 ```
-
-## 数据源
-
-数据存储在同仓库的 `data/slurm.json` 中，前端通过相对路径直接读取，无需外部 API 调用。
-
-- 页面加载时自动读取数据并渲染
-- 每 5 分钟自动刷新一次
-- 页面切换回来时也会立即刷新
-
-## 部署方式
-
-### GitHub Pages（推荐）
-
-1. 将本项目推送到 GitHub 仓库
-2. 进入仓库 **Settings → Pages**
-3. **Source** 选择 `Deploy from a branch`，分支选择 `main`，目录选择 `/ (root)`
-4. 保存后等待几分钟即可访问 `https://<username>.github.io/<repo-name>/`
-
-### 本地预览
-
-直接在项目根目录打开 `index.html` 即可在浏览器中预览。
 
 ## 开发者
 
