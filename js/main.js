@@ -305,7 +305,7 @@ function fetchData() {
       render(d);
       var now = new Date();
       var ts = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      $('updateTime').textContent = '最后更新: ' + (d.overview && d.overview.last_updated || '--') + ' · 本地时间：' + ts + ' · 每5min刷新一次';
+      $('updateTime').textContent = '最后更新: ' + (d.overview && d.overview.last_updated || '--') + ' · 本地时间：' + ts + ' · 每10min刷新一次';
     })
     .catch(function (e) {
       console.warn('数据加载失败:' + e.message);
