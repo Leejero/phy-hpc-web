@@ -125,6 +125,7 @@ function initSidebarScroll() {
 
   links.forEach(function (a) {
     a.addEventListener('click', function (e) {
+      if (!a.getAttribute('data-section')) return; // 不拦截外部链接
       e.preventDefault();
       var el = document.getElementById(a.getAttribute('data-section'));
       if (el) window.scrollTo({ top: el.offsetTop - 10, behavior: 'smooth' });
