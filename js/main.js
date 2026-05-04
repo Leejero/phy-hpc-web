@@ -5,7 +5,7 @@
 
 // 数据源配置
 // 数据来自 GitHub date 仓库
-var DATA_URL = 'https://raw.githubusercontent.com/Leejero/date/main/data/slurm.json';
+var DATA_URL = 'data/slurm.json';
 var REFRESH_INTERVAL = 300000;
 var refreshTimer = null;
 var lastData = null;
