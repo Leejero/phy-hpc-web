@@ -317,39 +317,6 @@ function fetchData() {
 }
 
 // ============================================================
-// 点击量统计（localStorage 存储）
-// ============================================================
-
-function updateClickCounter() {
-  var key_total = 'hpc_clicks_total';
-  var key_today = 'hpc_clicks_today';
-  var key_date = 'hpc_clicks_date';
-  var today = new Date().toISOString().slice(0, 10);
-
-  var total = parseInt(localStorage.getItem(key_total) || '0', 10);
-  var storedDate = localStorage.getItem(key_date);
-  var todayCount = 0;
-
-  if (storedDate === today) {
-    todayCount = parseInt(localStorage.getItem(key_today) || '0', 10);
-  } else {
-    localStorage.setItem(key_date, today);
-    localStorage.setItem(key_today, '0');
-  }
-
-  total += 1;
-  todayCount += 1;
-
-  localStorage.setItem(key_total, String(total));
-  localStorage.setItem(key_today, String(todayCount));
-
-  var totalEl = document.getElementById('totalClicks');
-  var todayEl = document.getElementById('todayClicks');
-  if (totalEl) totalEl.textContent = total.toLocaleString();
-  if (todayEl) todayEl.textContent = todayCount.toLocaleString();
-}
-
-// ============================================================
 // 浮动通知弹窗关闭
 // ============================================================
 
@@ -372,7 +339,6 @@ function restoreFloatNotice() {
 
 fetchData();
 refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
-updateClickCounter();
 restoreFloatNotice();
 
 document.addEventListener('visibilitychange', function () {

@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HPC 集群监控面板 - 物理与光电工程学院</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- Statcounter tracking code for https://leejero.github.io/date/ -->
+  <script type="text/javascript">
+  var sc_project=13225872; 
+  var sc_invisible=0; 
+  var sc_security="d54ffef5";
+  </script>
+  <script type="text/javascript" src="https://www.statcounter.com/counter/counter.js" async></script>
+  <noscript><div class="statcounter"><a title="Web Analytics Made Easy - Statcounter" href="https://statcounter.com/" target="_blank"><img class="statcounter" src="https://c.statcounter.com/13225872/0/d54ffef5/0/" alt="Web Analytics Made Easy - Statcounter" referrerPolicy="no-referrer-when-downgrade"></a></div></noscript>
+  <!-- End of Statcounter Code -->
 </head>
 <body>
 
@@ -45,13 +54,13 @@
 <!-- Floating notice popup -->
 <div class="float-notice" id="floatNotice">
   <button class="float-notice-close" onclick="closeFloatNotice()" title="关闭">✕</button>
-  <div style="text-align:center;">
+  <div class="notice-body">
     <span class="notice-icon">💡</span>
-    <strong style="font-size:1.1rem;">数据刷新策略</strong><br>
-    <span style="display:inline-block;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:8px;font-weight:600;margin-top:6px;">☀️ 日间 08:00 – 24:00</span><br>
-    <span style="font-size:1.05rem;">数据每 <strong style="font-size:1.15rem;text-decoration:underline;">20 分钟</strong> 自动刷新</span><br>
-    <span style="display:inline-block;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:8px;font-weight:600;margin-top:4px;">🌙 夜间 00:00 – 08:00</span><br>
-    <span style="font-size:1.05rem;">数据每 <strong style="font-size:1.15rem;text-decoration:underline;">2 小时</strong> 自动刷新</span>
+    <span class="notice-title">数据刷新策略</span><br>
+    <span class="notice-tag notice-tag-day">☀️ 日间 08:00 – 24:00</span><br>
+    <span class="notice-text">数据每 <span class="notice-highlight">20 分钟</span> 自动刷新</span><br>
+    <span class="notice-tag notice-tag-night">🌙 夜间 00:00 – 08:00</span><br>
+    <span class="notice-text">数据每 <span class="notice-highlight">2 小时</span> 自动刷新</span>
   </div>
 </div>
 
@@ -62,8 +71,9 @@
     <p id="clusterSub">加载中...</p>
     <div class="badge" id="updateTime">--</div>
     <div class="click-counter">
-      <span class="counter-item">📊 总访问量：<span class="counter-num" id="totalClicks">--</span></span>
-      <span class="counter-item">🔥 今日访问：<span class="counter-num" id="todayClicks">--</span></span>
+      <span class="counter-item">
+        <span>📊</span> 访问量：<span class="counter-num"><img src="https://c.statcounter.com/13225872/0/d54ffef5/0/" alt="访问量" id="scImg" style="height:18px;vertical-align:middle;"></span>
+      </span>
     </div>
   </div>
   <div class="container" id="app">
