@@ -42,12 +42,29 @@
 <!-- Sidebar toggle button -->
 <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="显示侧边栏">☰</button>
 
+<!-- Floating notice popup -->
+<div class="float-notice" id="floatNotice">
+  <button class="float-notice-close" onclick="closeFloatNotice()" title="关闭">✕</button>
+  <div style="text-align:center;">
+    <span class="notice-icon">💡</span>
+    <strong style="font-size:1.1rem;">数据刷新策略</strong><br>
+    <span style="display:inline-block;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:8px;font-weight:600;margin-top:6px;">☀️ 日间 08:00 – 24:00</span><br>
+    <span style="font-size:1.05rem;">数据每 <strong style="font-size:1.15rem;text-decoration:underline;">20 分钟</strong> 自动刷新</span><br>
+    <span style="display:inline-block;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:8px;font-weight:600;margin-top:4px;">🌙 夜间 00:00 – 08:00</span><br>
+    <span style="font-size:1.05rem;">数据每 <strong style="font-size:1.15rem;text-decoration:underline;">2 小时</strong> 自动刷新</span>
+  </div>
+</div>
+
 <!-- Main content -->
 <div class="main-wrap" id="mainWrap">
   <div class="header">
     <h1 id="clusterName">HPC 集群监控面板</h1>
     <p id="clusterSub">加载中...</p>
     <div class="badge" id="updateTime">--</div>
+    <div class="click-counter">
+      <span class="counter-item">📊 总访问量：<span class="counter-num" id="totalClicks">--</span></span>
+      <span class="counter-item">🔥 今日访问：<span class="counter-num" id="todayClicks">--</span></span>
+    </div>
   </div>
   <div class="container" id="app">
     <div class="loading" id="loader"><div class="spinner"></div>正在获取集群数据...</div>

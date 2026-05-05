@@ -189,6 +189,82 @@ tr:hover td { background:#f8fafc; }
 .sidebar.hidden { transform: translateX(-100%); }
 .sidebar.hidden ~ .sidebar-toggle { display:flex; }
 
+/* ===== Floating Notice Popup ===== */
+.float-notice {
+  position: fixed;
+  z-index: 1000;
+  background: linear-gradient(135deg, #4f6ef7 0%, #7c3aed 100%);
+  color: #fff;
+  padding: 14px 36px 14px 18px;
+  border-radius: 14px;
+  font-size: 1rem;
+  line-height: 1.6;
+  box-shadow: 0 6px 24px rgba(79, 110, 247, .35), 0 2px 8px rgba(0,0,0,.1);
+  max-width: 420px;
+  pointer-events: auto;
+  animation: floatBounce 60s ease-in-out infinite;
+  opacity: .95;
+  backdrop-filter: blur(4px);
+}
+.float-notice .notice-icon {
+  margin-right: 6px;
+}
+.float-notice-close {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.7);
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color .2s, background .2s;
+}
+.float-notice-close:hover {
+  color: #fff;
+  background: rgba(255,255,255,.15);
+}
+.float-notice.hidden {
+  display: none;
+}
+
+@keyframes floatBounce {
+  0%   { top: 18%;  left: 5%;   transform: rotate(-1deg); }
+  12%  { top: 8%;   left: 55%;  transform: rotate(1deg); }
+  25%  { top: 22%;  left: 70%;  transform: rotate(-0.5deg); }
+  37%  { top: 55%;  left: 60%;  transform: rotate(0.8deg); }
+  50%  { top: 65%;  left: 15%;  transform: rotate(-1deg); }
+  62%  { top: 40%;  left: 5%;   transform: rotate(0.5deg); }
+  75%  { top: 10%;  left: 30%;  transform: rotate(-0.3deg); }
+  87%  { top: 30%;  left: 65%;  transform: rotate(0.6deg); }
+  100% { top: 18%;  left: 5%;   transform: rotate(-1deg); }
+}
+
+/* ===== Click Counter ===== */
+.click-counter {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 10px;
+}
+.click-counter .counter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,.18);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: .8rem;
+  color: #fff;
+}
+.click-counter .counter-item .counter-num {
+  font-weight: 700;
+  font-size: .9rem;
+}
+
 /* ===== Responsive: Tablet & Mobile ===== */
 @media(max-width:1024px) {
   .sidebar { transform: translateX(-100%); }
