@@ -296,4 +296,27 @@ tr:hover td { background:#f8fafc; }
   .section-title { font-size:1rem; margin:20px 0 10px; }
   .footer { font-size:.72rem; padding:10px 12px; }
   .sidebar { width: 260px; }
+
+  /* Mobile floating popup */
+  .float-notice {
+    max-width: calc(100vw - 32px);
+    padding: 12px 32px 12px 14px;
+    font-size: .85rem;
+    line-height: 1.5;
+    animation: floatBounceMobile 45s ease-in-out infinite;
+  }
+  .float-notice strong { font-size: .95rem !important; }
+  .float-notice span[style*="font-size:1.05rem"] { font-size: .9rem !important; }
+  .float-notice strong[style*="font-size:1.15rem"] { font-size: 1rem !important; }
+}
+
+@keyframes floatBounceMobile {
+  0%   { top: 12%;  left: 4%; }
+  14%  { top: 6%;   left: 40%; }
+  28%  { top: 25%;  left: 55%; }
+  42%  { top: 50%;  left: 45%; }
+  56%  { top: 60%;  left: 8%; }
+  70%  { top: 35%;  left: 4%; }
+  84%  { top: 8%;   left: 20%; }
+  100% { top: 12%;  left: 4%; }
 }
