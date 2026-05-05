@@ -206,8 +206,37 @@ tr:hover td { background:#f8fafc; }
   opacity: .95;
   backdrop-filter: blur(4px);
 }
+.float-notice .notice-body {
+  text-align: center;
+}
 .float-notice .notice-icon {
   margin-right: 6px;
+}
+.float-notice .notice-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.float-notice .notice-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.float-notice .notice-tag-day {
+  background: rgba(255,255,255,.2);
+}
+.float-notice .notice-tag-night {
+  background: rgba(255,255,255,.15);
+  margin-top: 4px;
+}
+.float-notice .notice-text {
+  font-size: 1.05rem;
+}
+.float-notice .notice-highlight {
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-decoration: underline;
 }
 .float-notice-close {
   position: absolute;
@@ -285,6 +314,11 @@ tr:hover td { background:#f8fafc; }
   .header { padding:20px 0 16px; }
   .header h1 { font-size:1.5rem; }
   .container { padding:14px 12px 70px; }
+
+  /* Tablet floating popup */
+  .float-notice {
+    max-width: 360px;
+  }
 }
 
 @media(max-width:640px) {
@@ -299,15 +333,38 @@ tr:hover td { background:#f8fafc; }
 
   /* Mobile floating popup */
   .float-notice {
-    max-width: calc(100vw - 32px);
-    padding: 12px 32px 12px 14px;
-    font-size: .85rem;
-    line-height: 1.5;
-    animation: floatBounceMobile 45s ease-in-out infinite;
+    max-width: calc(100vw - 24px) !important;
+    width: auto !important;
+    min-width: 240px;
+    padding: 10px 30px 10px 12px !important;
+    font-size: .82rem !important;
+    line-height: 1.5 !important;
+    animation: floatBounceMobile 45s ease-in-out infinite !important;
+    box-sizing: border-box !important;
+    overflow-wrap: break-word !important;
+    word-wrap: break-word !important;
   }
-  .float-notice strong { font-size: .95rem !important; }
-  .float-notice span[style*="font-size:1.05rem"] { font-size: .9rem !important; }
-  .float-notice strong[style*="font-size:1.15rem"] { font-size: 1rem !important; }
+  .float-notice .notice-body {
+    font-size: .82rem;
+  }
+  .float-notice .notice-title {
+    font-size: .95rem !important;
+  }
+  .float-notice .notice-text {
+    font-size: .82rem !important;
+  }
+  .float-notice .notice-highlight {
+    font-size: .88rem !important;
+    font-weight: 700;
+  }
+  .float-notice .notice-tag {
+    padding: 2px 6px !important;
+    font-size: .75rem !important;
+  }
+  .float-notice .notice-tag-day,
+  .float-notice .notice-tag-night {
+    margin-top: 4px !important;
+  }
 }
 
 @keyframes floatBounceMobile {

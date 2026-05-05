@@ -54,13 +54,13 @@
 <!-- Floating notice popup -->
 <div class="float-notice" id="floatNotice">
   <button class="float-notice-close" onclick="closeFloatNotice()" title="关闭">✕</button>
-  <div style="text-align:center;">
+  <div class="notice-body">
     <span class="notice-icon">💡</span>
-    <strong style="font-size:1.1rem;">数据刷新策略</strong><br>
-    <span style="display:inline-block;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:8px;font-weight:600;margin-top:6px;">☀️ 日间 08:00 – 24:00</span><br>
-    <span style="font-size:1.05rem;">数据每 <strong style="font-size:1.15rem;text-decoration:underline;">20 分钟</strong> 自动刷新</span><br>
-    <span style="display:inline-block;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:8px;font-weight:600;margin-top:4px;">🌙 夜间 00:00 – 08:00</span><br>
-    <span style="font-size:1.05rem;">数据每 <strong style="font-size:1.15rem;text-decoration:underline;">2 小时</strong> 自动刷新</span>
+    <span class="notice-title">数据刷新策略</span><br>
+    <span class="notice-tag notice-tag-day">☀️ 日间 08:00 – 24:00</span><br>
+    <span class="notice-text">数据每 <span class="notice-highlight">20 分钟</span> 自动刷新</span><br>
+    <span class="notice-tag notice-tag-night">🌙 夜间 00:00 – 08:00</span><br>
+    <span class="notice-text">数据每 <span class="notice-highlight">2 小时</span> 自动刷新</span>
   </div>
 </div>
 
