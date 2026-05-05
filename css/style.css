@@ -202,7 +202,7 @@ tr:hover td { background:#f8fafc; }
   box-shadow: 0 6px 24px rgba(79, 110, 247, .35), 0 2px 8px rgba(0,0,0,.1);
   max-width: 420px;
   pointer-events: auto;
-  animation: floatBounce 60s ease-in-out infinite;
+  animation: floatBounce 120s ease-in-out infinite;
   opacity: .95;
   backdrop-filter: blur(4px);
 }
@@ -368,12 +368,12 @@ tr:hover td { background:#f8fafc; }
 }
 
 @keyframes floatBounceMobile {
-  0%   { top: 12%;  left: 4%; }
-  14%  { top: 6%;   left: 40%; }
-  28%  { top: 25%;  left: 55%; }
-  42%  { top: 50%;  left: 45%; }
-  56%  { top: 60%;  left: 8%; }
-  70%  { top: 35%;  left: 4%; }
-  84%  { top: 8%;   left: 20%; }
-  100% { top: 12%;  left: 4%; }
+  0%   { top: 12%;  left: 3%; }
+  14%  { top: 6%;   left: 5%; }
+  28%  { top: 25%;  left: 4%; }
+  42%  { top: 50%;  left: 3%; }
+  56%  { top: 60%;  left: 5%; }
+  70%  { top: 35%;  left: 3%; }
+  84%  { top: 8%;   left: 4%; }
+  100% { top: 12%;  left: 3%; }
 }
