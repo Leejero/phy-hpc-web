@@ -26,9 +26,9 @@
       "total": 18
     },
     "users": {
-      "online_terminal": 4,
+      "online_terminal": 5,
       "active_slurm": 13,
-      "total_unique": 16
+      "total_unique": 17
     },
     "disks": {
       "mounts_monitored": 1,
@@ -53,10 +53,99 @@
       "top_10_users": []
     },
     "slurm_version": "24.05.4",
-    "server_uptime": "7天1小时36分",
-    "last_updated": "2026-05-23 16:20:05"
+    "server_uptime": "7天1小时56分",
+    "last_updated": "2026-05-23 16:40:05"
   },
   "partitions": [
+    {
+      "name": "student",
+      "qos": "student1",
+      "allowed_cores": 384,
+      "allocated_cores": 384,
+      "free_cores": 0,
+      "nodes": [
+        {
+          "name": "comput01",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput02",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput03",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput04",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput05",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 48,
+          "free_cores": 64,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput06",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput07",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput08",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput09",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        },
+        {
+          "name": "comput10",
+          "state": "mixed",
+          "total_cores": 112,
+          "allocated_cores": 96,
+          "free_cores": 16,
+          "memory_gb": 371.1
+        }
+      ]
+    },
     {
       "name": "teacher",
       "qos": "teacher",
@@ -234,104 +323,15 @@
           "memory_gb": 371.1
         }
       ]
-    },
-    {
-      "name": "student",
-      "qos": "student1",
-      "allowed_cores": 384,
-      "allocated_cores": 384,
-      "free_cores": 0,
-      "nodes": [
-        {
-          "name": "comput01",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput02",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput03",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput04",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput05",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 48,
-          "free_cores": 64,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput06",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput07",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput08",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput09",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        },
-        {
-          "name": "comput10",
-          "state": "mixed",
-          "total_cores": 112,
-          "allocated_cores": 96,
-          "free_cores": 16,
-          "memory_gb": 371.1
-        }
-      ]
     }
   ],
   "nodes": [
     {
       "name": "comput01",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -348,9 +348,9 @@
     {
       "name": "comput02",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -367,9 +367,9 @@
     {
       "name": "comput03",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -385,9 +385,9 @@
     {
       "name": "comput04",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -403,9 +403,9 @@
     {
       "name": "comput05",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -421,9 +421,9 @@
     {
       "name": "comput06",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -439,9 +439,9 @@
     {
       "name": "comput07",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -458,9 +458,9 @@
     {
       "name": "comput08",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -470,16 +470,16 @@
       "memory_gb": 371.1,
       "jobs_running": 2,
       "users": [
-        "yinjy",
-        "zhoumh"
+        "zhoumh",
+        "yinjy"
       ]
     },
     {
       "name": "comput09",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -495,9 +495,9 @@
     {
       "name": "comput10",
       "partitions": [
+        "teacher",
         "test",
-        "student",
-        "teacher"
+        "student"
       ],
       "state": "mixed",
       "total_cores": 112,
@@ -522,7 +522,7 @@
       ],
       "nodelist_str": "comput06",
       "cpus": 96,
-      "runtime": "2-06:02:38",
+      "runtime": "2-06:22:39",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-21T10:17:25",
       "user": "yinjy",
@@ -569,7 +569,7 @@
       ],
       "nodelist_str": "comput07",
       "cpus": 48,
-      "runtime": "2-03:31:42",
+      "runtime": "2-03:51:43",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-21T12:48:21",
       "user": "zengqh",
@@ -586,7 +586,7 @@
       ],
       "nodelist_str": "comput08",
       "cpus": 48,
-      "runtime": "3-18:18:19",
+      "runtime": "3-18:38:20",
       "time_limit": "11-00:00:00",
       "submit_time": "2026-05-19T22:01:44",
       "user": "zhoumh",
@@ -603,7 +603,7 @@
       ],
       "nodelist_str": "comput02",
       "cpus": 48,
-      "runtime": "1-09:38:10",
+      "runtime": "1-09:58:11",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-22T06:41:53",
       "user": "chengj",
@@ -620,7 +620,7 @@
       ],
       "nodelist_str": "comput07",
       "cpus": 48,
-      "runtime": "21:06:59",
+      "runtime": "21:27:00",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-22T19:13:04",
       "user": "wangh",
@@ -637,7 +637,7 @@
       ],
       "nodelist_str": "comput08",
       "cpus": 48,
-      "runtime": "1-04:52:06",
+      "runtime": "1-05:12:07",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-22T11:27:57",
       "user": "yinjy",
@@ -654,7 +654,7 @@
       ],
       "nodelist_str": "comput05",
       "cpus": 48,
-      "runtime": "1-04:56:59",
+      "runtime": "1-05:17:00",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-22T11:23:04",
       "user": "zhangxx",
@@ -671,7 +671,7 @@
       ],
       "nodelist_str": "comput01",
       "cpus": 48,
-      "runtime": "2-01:50:19",
+      "runtime": "2-02:10:20",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-21T14:29:44",
       "user": "liwn",
@@ -688,7 +688,7 @@
       ],
       "nodelist_str": "comput02",
       "cpus": 48,
-      "runtime": "2-05:04:45",
+      "runtime": "2-05:24:46",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-21T11:15:18",
       "user": "shangnr",
@@ -735,7 +735,7 @@
       ],
       "nodelist_str": "comput09",
       "cpus": 96,
-      "runtime": "1-04:28:23",
+      "runtime": "1-04:48:24",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-22T11:51:40",
       "user": "yinli",
@@ -752,7 +752,7 @@
       ],
       "nodelist_str": "comput03",
       "cpus": 96,
-      "runtime": "17:03:12",
+      "runtime": "17:23:13",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-22T23:16:51",
       "user": "sunjingjing",
@@ -769,7 +769,7 @@
       ],
       "nodelist_str": "comput01",
       "cpus": 48,
-      "runtime": "15:11",
+      "runtime": "35:12",
       "time_limit": "5-00:00:00",
       "submit_time": "2026-05-23T16:04:52",
       "user": "wangjianjun",
@@ -786,7 +786,7 @@
       ],
       "nodelist_str": "comput04",
       "cpus": 96,
-      "runtime": "1-21:19:22",
+      "runtime": "1-21:39:23",
       "time_limit": "7-00:00:00",
       "submit_time": "2026-05-21T19:00:41",
       "user": "yaoshichang",
@@ -803,7 +803,7 @@
       ],
       "nodelist_str": "comput10",
       "cpus": 96,
-      "runtime": "1:11:13",
+      "runtime": "1:31:14",
       "time_limit": "7-00:00:00",
       "submit_time": "2026-05-23T15:08:50",
       "user": "wangjianjun",
@@ -976,7 +976,7 @@
       "tty": "pts/0",
       "from": "10.10.31.222",
       "login_time": "2026-05-23 08:44",
-      "idle": "01:56",
+      "idle": "02:16",
       "what": "",
       "sessions": 2
     },
@@ -985,7 +985,7 @@
       "tty": "pts/1",
       "from": "10.134.52.246",
       "login_time": "2026-05-23 15:21",
-      "idle": "00:28",
+      "idle": "00:48",
       "what": "",
       "sessions": 1
     },
@@ -994,7 +994,7 @@
       "tty": "pts/5",
       "from": "10.134.52.246",
       "login_time": "2026-05-23 15:21",
-      "idle": "00:12",
+      "idle": "00:32",
       "what": "",
       "sessions": 2
     },
@@ -1003,7 +1003,16 @@
       "tty": "pts/7",
       "from": "10.134.55.68",
       "login_time": "2026-05-23 15:32",
-      "idle": "00:47",
+      "idle": "01:07",
+      "what": "",
+      "sessions": 1
+    },
+    {
+      "username": "jiaold",
+      "tty": "pts/8",
+      "from": "10.134.60.237",
+      "login_time": "2026-05-23 16:33",
+      "idle": ".",
       "what": "",
       "sessions": 1
     }
@@ -1023,8 +1032,8 @@
       "filesystem": "/dev/sda",
       "mount": "/public",
       "total_gb": 128545.0,
-      "used_gb": 18472.8,
-      "avail_gb": 110072.2,
+      "used_gb": 18474.9,
+      "avail_gb": 110070.0,
       "usage_percent": 15,
       "is_alert": false
     }
@@ -1049,7 +1058,7 @@
         "type": "high_load",
         "target": "cluster",
         "message": "集群 CPU 利用率达到 95.0% (912/960 核)",
-        "timestamp": "2026-05-23 16:20:04"
+        "timestamp": "2026-05-23 16:40:05"
       }
     ],
     "summary": {
@@ -1058,7 +1067,7 @@
       "info": 0
     },
     "has_critical": false,
-    "last_updated": "2026-05-23 16:20:04"
+    "last_updated": "2026-05-23 16:40:05"
   },
   "constraints": {
     "allowed_partitions": [
@@ -1112,7 +1121,7 @@
         "note": "所有分区共用集群 10 台机器（共 960 核），非分区独立拥有"
       }
     ],
-    "collected_at": "2026-05-23 16:20:05"
+    "collected_at": "2026-05-23 16:40:06"
   },
   "trend": [
     {
@@ -1337,7 +1346,7 @@
     }
   ],
   "timestamp": {
-    "collected_at": "2026-05-23T16:20:05.616341",
+    "collected_at": "2026-05-23T16:40:06.170497",
     "files": [
       "overview.json",
       "partitions.json",
@@ -1353,5 +1362,5 @@
       "constraints.json"
     ]
   },
-  "last_updated": "2026-05-23 16:20:05"
+  "last_updated": "2026-05-23 16:40:06"
 }
