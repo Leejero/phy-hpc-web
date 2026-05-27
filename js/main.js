@@ -342,16 +342,6 @@ function restoreFloatNotice() {
 
 var _searchTimer = null;
 
-function positionSearchResults() {
-  var input = $('userSearchInput');
-  var results = $('userSearchResults');
-  if (!input || !results) return;
-  var rect = input.getBoundingClientRect();
-  results.style.top = (rect.bottom + 6) + 'px';
-  results.style.left = rect.left + 'px';
-  results.style.width = rect.width + 'px';
-}
-
 function searchUser(query) {
   var results = $('userSearchResults');
   if (!results) return;
@@ -429,39 +419,49 @@ function searchUser(query) {
 
   results.innerHTML = h.join('');
   results.classList.add('show');
-  positionSearchResults();
 }
 
 function initUserSearch() {
   var input = $('userSearchInput');
-  var results = $('userSearchResults');
   if (!input) return;
+
+  // Create results div and append to body (avoids stacking context from .header's backdrop-filter)
+  var results = document.createElement('div');
+  results.className = 'user-search-results';
+  results.id = 'userSearchResults';
+  document.body.appendChild(results);
+
+  function positionResults() {
+    var rect = input.getBoundingClientRect();
+    results.style.top = (rect.bottom + 6) + 'px';
+    results.style.left = rect.left + 'px';
+    results.style.width = rect.width + 'px';
+  }
 
   input.addEventListener('input', function () {
     if (_searchTimer) clearTimeout(_searchTimer);
     var val = input.value;
     _searchTimer = setTimeout(function () {
       searchUser(val);
+      if (results.classList.contains('show')) positionResults();
     }, 150);
   });
 
   document.addEventListener('click', function (e) {
     if (!e.target.closest('.user-search-wrap') && !e.target.closest('.user-search-results')) {
-      $('userSearchResults').classList.remove('show');
+      results.classList.remove('show');
     }
   });
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-      $('userSearchResults').classList.remove('show');
-      $('userSearchInput').blur();
+      results.classList.remove('show');
+      input.blur();
     }
   });
 
   window.addEventListener('resize', function () {
-    if ($('userSearchResults').classList.contains('show')) {
-      positionSearchResults();
-    }
+    if (results.classList.contains('show')) positionResults();
   });
 }
 
