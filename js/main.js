@@ -347,9 +347,15 @@ function searchUser(query) {
   if (!results) return;
 
   query = (query || '').trim().toLowerCase();
-  if (!query || !lastData) {
+  if (!query) {
     results.classList.remove('show');
     results.innerHTML = '';
+    return;
+  }
+
+  if (!lastData) {
+    results.innerHTML = '<div class="search-no-result">数据加载中，请稍候...</div>';
+    results.classList.add('show');
     return;
   }
 
@@ -418,25 +424,26 @@ function searchUser(query) {
 function initUserSearch() {
   var input = $('userSearchInput');
   var results = $('userSearchResults');
-  if (!input || !results) return;
+  if (!input) return;
 
   input.addEventListener('input', function () {
     if (_searchTimer) clearTimeout(_searchTimer);
+    var val = input.value;
     _searchTimer = setTimeout(function () {
-      searchUser(input.value);
-    }, 200);
+      searchUser(val);
+    }, 150);
   });
 
   document.addEventListener('click', function (e) {
     if (!e.target.closest('.user-search-wrap')) {
-      results.classList.remove('show');
+      $('userSearchResults').classList.remove('show');
     }
   });
 
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-      results.classList.remove('show');
-      input.blur();
+      $('userSearchResults').classList.remove('show');
+      $('userSearchInput').blur();
     }
   });
 }
