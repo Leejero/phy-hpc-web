@@ -350,9 +350,7 @@ tr:hover td { background:rgba(79,110,247,.04); }
 .user-search-wrap input {
   width: 100%;
   padding: 10px 16px 10px 38px;
-  background: rgba(255,255,255,.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255,255,255,.6);
   border: 1px solid rgba(79,110,247,.12);
   border-radius: 10px;
   color: var(--text);
@@ -376,7 +374,6 @@ tr:hover td { background:rgba(79,110,247,.04); }
   transform: translateY(-50%);
   font-size: .9rem;
   pointer-events: none;
-  z-index: 1;
 }
 .user-search-results {
   display: none;
