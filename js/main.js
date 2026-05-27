@@ -446,7 +446,7 @@ function initUserSearch() {
   });
 
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('.user-search-wrap')) {
+    if (!e.target.closest('.user-search-wrap') && !e.target.closest('.user-search-results')) {
       $('userSearchResults').classList.remove('show');
     }
   });
