@@ -337,12 +337,118 @@ function restoreFloatNotice() {
 }
 
 // ============================================================
+// 用户搜索
+// ============================================================
+
+var _searchTimer = null;
+
+function searchUser(query) {
+  var results = $('userSearchResults');
+  if (!results) return;
+
+  query = (query || '').trim().toLowerCase();
+  if (!query || !lastData) {
+    results.classList.remove('show');
+    results.innerHTML = '';
+    return;
+  }
+
+  var ulist = lastData.users || [];
+  var jlist = lastData.jobs || [];
+  var online = lastData.online_users || [];
+
+  var matched = ulist.filter(function (u) {
+    return (u.username || '').toLowerCase().indexOf(query) !== -1;
+  });
+
+  if (matched.length === 0) {
+    results.innerHTML = '<div class="search-no-result">未找到匹配的用户</div>';
+    results.classList.add('show');
+    return;
+  }
+
+  var h = [];
+
+  matched.slice(0, 5).forEach(function (u) {
+    var uname = u.username;
+
+    // User info card
+    h.push('<div class="search-result-user">');
+    h.push('<div class="sr-username">' + esc(uname) + (u.is_online ? ' <span class="tag tag-online" style="font-size:.7rem;vertical-align:middle">在线</span>' : '') + '</div>');
+    h.push('<div class="sr-info">');
+    h.push('<span class="sr-tag">运行 ' + (u.running_jobs || 0) + '</span>');
+    h.push('<span class="sr-tag">等待 ' + (u.pending_jobs || 0) + '</span>');
+    h.push('<span class="sr-tag">' + (u.total_cores || 0) + ' 核</span>');
+    h.push('<span class="sr-tag">' + (u.total_nodes || 0) + ' 节点</span>');
+    h.push('<span class="sr-tag">' + (u.partitions || []).map(esc).join(', ') + '</span>');
+    h.push('</div></div>');
+
+    // User's jobs
+    var userJobs = jlist.filter(function (j) { return j.user === uname; });
+    if (userJobs.length > 0) {
+      h.push('<div class="search-result-section"><h4>📋 任务 (' + userJobs.length + ')</h4>');
+      h.push('<div class="table-wrap"><table><tr><th>ID</th><th>名称</th><th>状态</th><th>CPU</th><th>运行时间</th></tr>');
+      userJobs.slice(0, 10).forEach(function (j) {
+        h.push('<tr><td>' + esc(j.job_id) + '</td><td>' + esc(j.name) + '</td><td>' + tagState(j.status) + '</td><td>' + (j.cpus || 0) + '</td><td>' + esc(j.runtime) + '</td></tr>');
+      });
+      if (userJobs.length > 10) h.push('<tr><td colspan="5" style="text-align:center;color:var(--text2);font-size:.75rem">... 共 ' + userJobs.length + ' 条</td></tr>');
+      h.push('</table></div></div>');
+    }
+
+    // User's online sessions
+    var userOnline = online.filter(function (o) { return o.username === uname; });
+    if (userOnline.length > 0) {
+      h.push('<div class="search-result-section"><h4>🌐 在线终端</h4>');
+      h.push('<div class="table-wrap"><table><tr><th>终端</th><th>来源</th><th>登录时间</th><th>空闲</th></tr>');
+      userOnline.forEach(function (o) {
+        h.push('<tr><td>' + esc(o.tty) + '</td><td>' + esc(o.from) + '</td><td>' + esc(o.login_time) + '</td><td>' + esc(o.idle) + '</td></tr>');
+      });
+      h.push('</table></div></div>');
+    }
+  });
+
+  if (matched.length > 5) {
+    h.push('<div class="search-no-result" style="font-size:.78rem">还有 ' + (matched.length - 5) + ' 个匹配用户，请输入更精确的用户名</div>');
+  }
+
+  results.innerHTML = h.join('');
+  results.classList.add('show');
+}
+
+function initUserSearch() {
+  var input = $('userSearchInput');
+  var results = $('userSearchResults');
+  if (!input || !results) return;
+
+  input.addEventListener('input', function () {
+    if (_searchTimer) clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(function () {
+      searchUser(input.value);
+    }, 200);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.user-search-wrap')) {
+      results.classList.remove('show');
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      results.classList.remove('show');
+      input.blur();
+    }
+  });
+}
+
+// ============================================================
 // 初始化
 // ============================================================
 
 fetchData();
 refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
 restoreFloatNotice();
+initUserSearch();
 
 document.addEventListener('visibilitychange', function () {
   if (document.hidden) {
