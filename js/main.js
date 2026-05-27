@@ -342,6 +342,16 @@ function restoreFloatNotice() {
 
 var _searchTimer = null;
 
+function positionSearchResults() {
+  var input = $('userSearchInput');
+  var results = $('userSearchResults');
+  if (!input || !results) return;
+  var rect = input.getBoundingClientRect();
+  results.style.top = (rect.bottom + 6) + 'px';
+  results.style.left = rect.left + 'px';
+  results.style.width = rect.width + 'px';
+}
+
 function searchUser(query) {
   var results = $('userSearchResults');
   if (!results) return;
@@ -419,6 +429,7 @@ function searchUser(query) {
 
   results.innerHTML = h.join('');
   results.classList.add('show');
+  positionSearchResults();
 }
 
 function initUserSearch() {
@@ -444,6 +455,12 @@ function initUserSearch() {
     if (e.key === 'Escape') {
       $('userSearchResults').classList.remove('show');
       $('userSearchInput').blur();
+    }
+  });
+
+  window.addEventListener('resize', function () {
+    if ($('userSearchResults').classList.contains('show')) {
+      positionSearchResults();
     }
   });
 }
