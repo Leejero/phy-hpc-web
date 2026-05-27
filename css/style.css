@@ -378,17 +378,14 @@ tr:hover td { background:rgba(79,110,247,.04); }
 .user-search-results {
   display: none;
   position: fixed;
-  background: rgba(255,255,255,.95);
-  backdrop-filter: blur(24px) saturate(1.8);
-  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  background: rgba(255,255,255,.97);
   border: 1px solid rgba(79,110,247,.12);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(79,110,247,.12), 0 2px 8px rgba(0,0,0,.06);
+  box-shadow: 0 8px 32px rgba(79,110,247,.18), 0 2px 8px rgba(0,0,0,.08);
   max-height: 60vh;
   overflow-y: auto;
-  z-index: 500;
+  z-index: 9999;
   padding: 14px 16px;
-  width: 360px;
 }
 .user-search-results.show { display: block; }
 .search-result-user {
