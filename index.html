@@ -78,7 +78,6 @@
     </div>
     <div class="user-search-wrap">
       <input type="text" id="userSearchInput" placeholder="🔍 搜索用户名..." autocomplete="off">
-      <div class="user-search-results" id="userSearchResults"></div>
     </div>
   </div>
   <div class="container" id="app">
@@ -91,6 +90,9 @@
 
 <!-- Back to top -->
 <button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶端">↑</button>
+
+<!-- Search results (outside main-wrap to avoid stacking context issues) -->
+<div class="user-search-results" id="userSearchResults"></div>
 
 <script src="js/main.js"></script>
 </body>
