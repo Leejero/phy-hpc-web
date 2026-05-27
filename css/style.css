@@ -223,6 +223,7 @@ tr:hover td { background:rgba(79,110,247,.04); }
 /* ===== Desktop sidebar hidden state ===== */
 .sidebar.hidden { transform: translateX(-100%); }
 .sidebar.hidden ~ .sidebar-toggle { display:flex; }
+.sidebar.hidden ~ .main-wrap .user-search-results { left:0; }
 
 /* ===== Floating Notice Popup ===== */
 .float-notice {
@@ -377,20 +378,19 @@ tr:hover td { background:rgba(79,110,247,.04); }
 }
 .user-search-results {
   display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-w);
   right: 0;
-  background: rgba(255,255,255,.88);
-  backdrop-filter: blur(20px) saturate(1.8);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  border: 1px solid rgba(79,110,247,.12);
-  border-radius: 12px;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(24px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8);
+  border-bottom: 1px solid rgba(79,110,247,.12);
   box-shadow: 0 8px 32px rgba(79,110,247,.12), 0 2px 8px rgba(0,0,0,.06);
-  max-height: 70vh;
+  max-height: 80vh;
   overflow-y: auto;
-  z-index: 300;
-  padding: 12px;
+  z-index: 500;
+  padding: 20px 28px;
 }
 .user-search-results.show { display: block; }
 .search-result-user {
@@ -464,6 +464,7 @@ tr:hover td { background:rgba(79,110,247,.04); }
   .header h1 { font-size:1.5rem; }
   .container { padding:14px 12px 70px; }
   .user-search-wrap { max-width: 300px; }
+  .user-search-results { left: 0; }
 
   /* Tablet floating popup */
   .float-notice {
