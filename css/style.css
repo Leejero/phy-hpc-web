@@ -71,6 +71,14 @@ body {
   font-size:.72rem; color:var(--text2);
   display:flex; align-items:center;
 }
+.sidebar-divider { border-top:1px solid rgba(79,110,247,.08); margin:4px 16px; }
+.sidebar-extra { padding:0 12px; }
+.sidebar-extra a {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 12px; color:var(--text2); text-decoration:none;
+  border-radius:8px; transition:all .2s;
+}
+.sidebar-extra a:hover { color:var(--primary); background:rgba(79,110,247,.07); }
 
 /* Sidebar overlay for mobile */
 .sidebar-overlay {
@@ -116,11 +124,12 @@ body {
 .header .badge { display:inline-block; background:rgba(79,110,247,.1); color:var(--primary); padding:3px 12px; border-radius:20px; font-size:.8rem; margin-top:8px; }
 
 /* ===== Layout ===== */
-.container { max-width:1100px; margin:0 auto; padding:20px 16px 40vh; width:100%; }
+.container { max-width:1100px; margin:0 auto; padding:20px 16px 80px; width:100%; }
 .grid { display:grid; gap:16px; }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-1 { grid-template-columns: 1fr; }
 
 /* ===== Card ===== */
 .card {
@@ -227,6 +236,7 @@ tr:hover td { background:rgba(79,110,247,.04); }
 /* ===== Floating Notice Popup ===== */
 .float-notice {
   position: fixed;
+  top: 0; left: 0; /* 位移全部交给 transform（合成器动画，不触发重排） */
   z-index: 1000;
   background: rgba(255,255,255,.65);
   backdrop-filter: blur(20px) saturate(1.8);
@@ -308,15 +318,15 @@ tr:hover td { background:rgba(79,110,247,.04); }
 }
 
 @keyframes floatBounce {
-  0%   { top: 18%;  left: 5%;   transform: rotate(-1deg); }
-  12%  { top: 8%;   left: 55%;  transform: rotate(1deg); }
-  25%  { top: 22%;  left: 70%;  transform: rotate(-0.5deg); }
-  37%  { top: 55%;  left: 60%;  transform: rotate(0.8deg); }
-  50%  { top: 65%;  left: 15%;  transform: rotate(-1deg); }
-  62%  { top: 40%;  left: 5%;   transform: rotate(0.5deg); }
-  75%  { top: 10%;  left: 30%;  transform: rotate(-0.3deg); }
-  87%  { top: 30%;  left: 65%;  transform: rotate(0.6deg); }
-  100% { top: 18%;  left: 5%;   transform: rotate(-1deg); }
+  0%   { transform: translate(5vw, 18vh)  rotate(-1deg); }
+  12%  { transform: translate(55vw, 8vh)  rotate(1deg); }
+  25%  { transform: translate(70vw, 22vh) rotate(-0.5deg); }
+  37%  { transform: translate(60vw, 55vh) rotate(0.8deg); }
+  50%  { transform: translate(15vw, 65vh) rotate(-1deg); }
+  62%  { transform: translate(5vw, 40vh)  rotate(0.5deg); }
+  75%  { transform: translate(30vw, 10vh) rotate(-0.3deg); }
+  87%  { transform: translate(65vw, 30vh) rotate(0.6deg); }
+  100% { transform: translate(5vw, 18vh)  rotate(-1deg); }
 }
 
 /* ===== Click Counter ===== */
@@ -513,12 +523,12 @@ tr:hover td { background:rgba(79,110,247,.04); }
 }
 
 @keyframes floatBounceMobile {
-  0%   { top: 12%;  left: 3%; }
-  14%  { top: 6%;   left: 5%; }
-  28%  { top: 25%;  left: 4%; }
-  42%  { top: 50%;  left: 3%; }
-  56%  { top: 60%;  left: 5%; }
-  70%  { top: 35%;  left: 3%; }
-  84%  { top: 8%;   left: 4%; }
-  100% { top: 12%;  left: 3%; }
+  0%   { transform: translate(3vw, 12vh); }
+  14%  { transform: translate(5vw, 6vh); }
+  28%  { transform: translate(4vw, 25vh); }
+  42%  { transform: translate(3vw, 50vh); }
+  56%  { transform: translate(5vw, 60vh); }
+  70%  { transform: translate(3vw, 35vh); }
+  84%  { transform: translate(4vw, 8vh); }
+  100% { transform: translate(3vw, 12vh); }
 }
