@@ -270,35 +270,14 @@ tr:hover td { background:rgba(79,110,247,.04); }
 .sidebar.hidden ~ .sidebar-toggle { display:flex; }
 
 /* ===== 平台公告栏目（替代原浮动通知：静态卡片，含更新策略与功能简介） ===== */
-/* 平台公告板块：上下左右整体居中（首屏公告） */
-.announcement-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;       /* 左右居中：内容横向居中 */
-  justify-content: center;   /* 上下居中：内容纵向居中 */
-  text-align: center;
-  min-height: 50vh;          /* 提供纵向居中的高度基准 */
-  padding: 24px 20px;
-}
-/* 公告标题去左侧强调条、整体居中 */
-.announcement-card .section-title { border-left: none; padding-left: 0; justify-content: center; }
-.ann-sub { width: 100%; max-width: 720px; }
-.ann-sub + .ann-sub { margin-top: var(--sp-5); padding-top: var(--sp-5); border-top: 1px solid var(--border); }
-.ann-sub-title { font-size: .9rem; font-weight: 700; color: var(--text); display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 12px; }
-.ann-sub-title .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--primary); flex: none; }
-/* 数据刷新策略：横向三枚信息 pill，居中排列 */
-.ann-strategy { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); }
-.ann-pill { display: flex; align-items: center; justify-content: center; gap: 10px; flex: 0 1 200px; background: rgba(79,110,247,.06); border: 1px solid rgba(79,110,247,.1); border-radius: var(--radius); padding: 10px 14px; text-align: left; }
-.ann-pill-ico { font-size: 1.15rem; line-height: 1; flex: none; }
-.ann-pill-txt { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+/* 更新策略板块：平铺常规卡片，与下方集群概览等区块一致 */
+.announcement-card { padding: 18px 20px; }
+.ann-strategy { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+.ann-pill { display: flex; align-items: center; gap: 10px; background: rgba(79,110,247,.05); border: 1px solid rgba(79,110,247,.1); border-radius: var(--radius); padding: 12px 14px; }
+.ann-pill-ico { font-size: 1.2rem; line-height: 1; flex: none; }
+.ann-pill-txt { display: flex; flex-direction: column; min-width: 0; }
 .ann-pill-txt b { font-size: .86rem; color: var(--text); }
 .ann-pill-txt span { font-size: .74rem; color: var(--text2); margin-top: 1px; }
-/* 功能简介：九宫格特性卡片，居中 */
-.ann-intro { font-size: .84rem; color: var(--text2); margin-bottom: 12px; line-height: 1.55; }
-.ann-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); justify-content: center; }
-.ann-feat { background: rgba(79,110,247,.05); border: 1px solid rgba(79,110,247,.1); border-radius: var(--radius-sm); padding: 8px 10px; text-align: center; }
-.ann-feat b { display: block; font-size: .82rem; color: var(--primary); }
-.ann-feat span { font-size: .72rem; color: var(--text2); }
 
 /* ===== User Search ===== */
 .user-search-wrap { position: relative; max-width: 360px; margin: 12px auto 0; }
@@ -374,8 +353,8 @@ tr:hover td { background:rgba(79,110,247,.04); }
   .section-title { font-size:1rem; margin:20px 0 10px; }
   .footer { font-size:.72rem; padding:10px 12px; }
   .sidebar { width: 260px; }
-  .announcement-card { padding: 16px 14px; min-height: 38vh; }
-  .ann-features { grid-template-columns: repeat(2, 1fr); }
+  .announcement-card { padding: 16px 14px; }
+  .ann-strategy { grid-template-columns: 1fr; }
 }
 
 /* ===== 无障碍：尊重用户的减少动态偏好 ===== */
