@@ -27,29 +27,46 @@
 </head>
 <body>
 
+<!-- SVG 图标精灵（零依赖，内联引用，跨平台一致） -->
+<svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="ic-overview" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></symbol>
+  <symbol id="ic-partitions" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="ic-alerts" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="ic-disks" viewBox="0 0 24 24"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></symbol>
+  <symbol id="ic-qos" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></symbol>
+  <symbol id="ic-nodes" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3"/><path d="M15 1v3"/><path d="M9 20v3"/><path d="M15 20v3"/><path d="M20 9h3"/><path d="M20 14h3"/><path d="M1 9h3"/><path d="M1 14h3"/></symbol>
+  <symbol id="ic-jobs" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+  <symbol id="ic-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="ic-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="ic-incar" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="ic-critical" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+  <symbol id="ic-warning" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+</svg>
+
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <h2>⚡ HPC 监控</h2>
     <p>物理与光电工程学院集群</p>
-    <button class="sidebar-close" id="sidebarClose" title="隐藏侧边栏" aria-label="隐藏侧边栏">☰</button>
+    <button class="sidebar-close" id="sidebarClose" title="隐藏侧边栏" aria-label="隐藏侧边栏">✕</button>
   </div>
   <nav class="sidebar-nav">
-    <a href="#overview" class="active" data-section="overview"><span class="nav-icon">📊</span><span>集群概览</span></a>
-    <a href="#partitions" data-section="partitions"><span class="nav-icon">📦</span><span>分区资源</span></a>
-    <a href="#alerts" data-section="alerts"><span class="nav-icon">🚨</span><span>告警信息</span></a>
-    <a href="#disks" data-section="disks"><span class="nav-icon">💾</span><span>磁盘空间</span></a>
-    <a href="#qos" data-section="qos"><span class="nav-icon">⚙️</span><span>QOS 约束</span></a>
-    <a href="#nodes" data-section="nodes"><span class="nav-icon">🖥️</span><span>节点状态</span></a>
-    <a href="#jobs" data-section="jobs"><span class="nav-icon">📋</span><span>任务列表</span></a>
-    <a href="#users" data-section="users"><span class="nav-icon">👥</span><span>用户资源</span></a>
-    <a href="#online" data-section="online"><span class="nav-icon">🌐</span><span>在线终端</span></a>
+    <a href="#overview" class="active" data-section="overview"><span class="nav-icon"><svg class="ic"><use href="#ic-overview"/></svg></span><span>集群概览</span></a>
+    <a href="#partitions" data-section="partitions"><span class="nav-icon"><svg class="ic"><use href="#ic-partitions"/></svg></span><span>分区资源</span></a>
+    <a href="#alerts" data-section="alerts"><span class="nav-icon"><svg class="ic"><use href="#ic-alerts"/></svg></span><span>告警信息</span></a>
+    <a href="#disks" data-section="disks"><span class="nav-icon"><svg class="ic"><use href="#ic-disks"/></svg></span><span>磁盘空间</span></a>
+    <a href="#qos" data-section="qos"><span class="nav-icon"><svg class="ic"><use href="#ic-qos"/></svg></span><span>QOS 约束</span></a>
+    <a href="#nodes" data-section="nodes"><span class="nav-icon"><svg class="ic"><use href="#ic-nodes"/></svg></span><span>节点状态</span></a>
+    <a href="#jobs" data-section="jobs"><span class="nav-icon"><svg class="ic"><use href="#ic-jobs"/></svg></span><span>任务列表</span></a>
+    <a href="#users" data-section="users"><span class="nav-icon"><svg class="ic"><use href="#ic-users"/></svg></span><span>用户资源</span></a>
+    <a href="#online" data-section="online"><span class="nav-icon"><svg class="ic"><use href="#ic-online"/></svg></span><span>在线终端</span></a>
   </nav>
 <div class="sidebar-divider"></div>
 
 <div class="sidebar-extra">
     <a href="INCAR.html" target="_blank" rel="noopener noreferrer">
-        <span>📖</span><span>INCAR 手册</span>
+        <span><svg class="ic"><use href="#ic-incar"/></svg></span><span>INCAR 手册</span>
     </a>
 </div>
   <div class="sidebar-footer">@Leejero · HPC 监控系统</div>
@@ -65,7 +82,7 @@
 <div class="float-notice" id="floatNotice">
   <button class="float-notice-close" title="关闭" aria-label="关闭通知">✕</button>
   <div class="notice-body">
-    <span class="notice-icon">💡</span>
+    <span class="notice-icon"><svg class="ic"><use href="#ic-info"/></svg></span>
     <span class="notice-title">数据刷新策略</span><br>
     <span class="notice-tag notice-tag-day">☀️ 日间 08:00 – 24:00</span><br>
     <span class="notice-text">数据每 <span class="notice-highlight">20 分钟</span> 自动刷新</span><br>
@@ -82,11 +99,6 @@
     <h1 id="clusterName">HPC 集群监控面板</h1>
     <p id="clusterSub">加载中...</p>
     <div class="badge" id="updateTime">--</div>
-    <div class="click-counter">
-      <span class="counter-item">
-        <span>📊</span> 访问量：<span class="counter-num"><img src="https://c.statcounter.com/13225872/0/d54ffef5/0/" alt="访问量" id="scImg" style="height:18px;vertical-align:middle;"></span>
-      </span>
-    </div>
     <div class="user-search-wrap">
       <input type="text" id="userSearchInput" placeholder=" 搜索用户名..." autocomplete="off" aria-label="搜索用户名">
     </div>
@@ -97,7 +109,7 @@
 </main>
 
 <!-- Fixed footer -->
-<footer class="footer" id="footer">开发者：<span class="dev">@Leejero</span> &nbsp;|&nbsp; 物理与光电工程学院高性能计算集群监控系统</footer>
+<footer class="footer" id="footer">开发者：<span class="dev">@Leejero</span> &nbsp;|&nbsp; 物理与光电工程学院高性能计算集群监控系统<span class="footer-counter">访问量 <img src="https://c.statcounter.com/13225872/0/d54ffef5/0/" alt="访问量" id="scImg"></span></footer>
 
 <!-- Back to top -->
 <button class="back-top" id="backTop" title="回到顶端" aria-label="回到顶端">↑</button>
