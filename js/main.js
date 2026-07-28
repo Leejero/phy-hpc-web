@@ -10,6 +10,7 @@ var REFRESH_INTERVAL = 300000; // 页面轮询周期 5 分钟（数据由集群�
 var refreshTimer = null;
 var lastData = null;
 var lastRaw = ''; // 上次数据原文，用于内容未变化时跳过重渲染
+var lastUpdatedStr = '--'; // 最近一次成功获取的数据时间，供刷新失败提示使用
 
 // ============================================================
 // 工具函数
@@ -29,6 +30,11 @@ function esc(s) {
     .replace(/'/g, '&#39;');
 }
 
+// 统一 SVG 图标渲染（依赖 index.html 内联 symbol 精灵）
+function ic(name, cls) {
+  return '<svg class="ic' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#ic-' + name + '"></use></svg>';
+}
+
 function pct(a, b) {
   return b > 0 ? Math.round(a / b * 100) : 0;
 }
@@ -46,6 +52,12 @@ function tagState(s) {
   if (s === 'mixed') return '<span class="tag tag-mixed">混合</span>';
   if (s === 'alloc') return '<span class="tag tag-alloc">已分配</span>';
   return '<span class="tag">' + esc(s) + '</span>';
+}
+
+// 空数据占位卡（与"暂无告警"保持同一模式）
+function sectionEmpty(iconName, id, titleText, emptyText) {
+  return '<div class="section-title" id="' + id + '">' + ic(iconName) + ' ' + esc(titleText) + '</div>' +
+         '<div class="card empty-state">' + esc(emptyText) + '</div>';
 }
 
 // ============================================================
@@ -166,14 +178,14 @@ function renderOverview(d) {
   var jobs = ov.jobs || {};
   var us = ov.users || {};
   var h = [];
-  h.push('<div class="section-title" id="overview">📊 集群概览</div>');
+  h.push('<div class="section-title" id="overview">' + ic('overview') + ' 集群概览</div>');
   h.push('<div class="grid grid-4">');
   h.push('<div class="card stat"><div class="num">' + (cs.total_cores || 0) + '</div><div class="label">总核心数</div></div>');
   h.push('<div class="card stat green"><div class="num">' + (cs.allocated_cores || 0) + '</div><div class="label">已使用核心</div></div>');
   h.push('<div class="card stat cyan"><div class="num">' + (cs.free_cores || 0) + '</div><div class="label">空闲核心</div></div>');
   h.push('<div class="card stat ' + (jobs.running > 0 ? 'green' : '') + '"><div class="num">' + (jobs.running || 0) + '</div><div class="label">运行任务</div></div>');
   h.push('</div>');
-  h.push('<div class="grid grid-4" style="margin-top:12px">');
+  h.push('<div class="grid grid-4 mt-md">');
   h.push('<div class="card stat"><div class="num">' + (cs.active_nodes || 0) + '/' + (cs.total_nodes || 0) + '</div><div class="label">活跃节点</div></div>');
   h.push('<div class="card stat orange"><div class="num">' + (jobs.pending || 0) + '</div><div class="label">等待任务</div></div>');
   h.push('<div class="card stat"><div class="num">' + (us.online_terminal || 0) + '</div><div class="label">当前在线人数</div></div>');
@@ -185,7 +197,8 @@ function renderOverview(d) {
 function renderPartitions(d) {
   var parts = d.partitions || [];
   var h = [];
-  h.push('<div class="section-title" id="partitions">📦 分区资源</div>');
+  if (parts.length === 0) return sectionEmpty('partitions', 'partitions', '分区资源', '暂无分区数据');
+  h.push('<div class="section-title" id="partitions">' + ic('partitions') + ' 分区资源</div>');
   h.push('<div class="grid grid-' + Math.min(Math.max(parts.length, 1), 3) + '">');
   parts.forEach(function (p) {
     var ac = p.allowed_cores || 960;
@@ -194,10 +207,10 @@ function renderPartitions(d) {
     var pp = pct(uc, ac);
     var pname = String(p.name || '未命名');
     pname = pname.charAt(0).toUpperCase() + pname.slice(1);
-    h.push('<div class="card"><div class="card-title"><span class="dot" style="background:var(--primary)"></span>' + esc(pname) + ' 分区 <span class="tag tag-qos">QOS: ' + esc(p.qos) + '</span></div>');
+    h.push('<div class="card"><div class="card-title"><span class="dot"></span>' + esc(pname) + ' 分区 <span class="tag tag-qos">QOS: ' + esc(p.qos) + '</span></div>');
     h.push('<div class="progress-wrap"><div class="progress-label"><span>已使用 ' + uc + ' 核</span><span>' + pp + '%</span></div>' + progressBar(pp) + '</div>');
-    h.push('<div style="display:flex;justify-content:space-between;font-size:.82rem;color:var(--text2);margin-top:6px"><span>允许核心: ' + ac + '</span><span>空闲: ' + fc + '</span></div>');
-    h.push('<div style="margin-top:8px;font-size:.8rem;color:var(--text2)">节点数: ' + (p.nodes || []).length + '</div></div>');
+    h.push('<div class="kv-row"><span>允许核心: ' + ac + '</span><span>空闲: ' + fc + '</span></div>');
+    h.push('<div class="sub-text">节点数: ' + (p.nodes || []).length + '</div></div>');
   });
   h.push('</div>');
   return h.join('');
@@ -208,13 +221,16 @@ function renderAlerts(d) {
   var alertList = alerts.alerts || [];
   var h = [];
   if (alertList.length > 0) {
-    h.push('<div class="section-title" id="alerts">🚨 告警信息</div><div class="card">');
+    h.push('<div class="section-title" id="alerts">' + ic('alerts') + ' 告警信息</div><div class="card">');
     alertList.forEach(function (a) {
-      h.push('<div class="alert-item ' + (a.level === 'critical' ? 'alert-critical' : 'alert-warning') + '"><span class="alert-icon">' + (a.level === 'critical' ? '🔴' : '🟡') + '</span><div><strong>' + esc(a.type) + '</strong> - ' + esc(a.message) + '<br><small style="color:var(--text2)">' + esc(a.timestamp) + '</small></div></div>');
+      var icon = a.level === 'critical'
+        ? ic('critical', 'alert-ic-critical')
+        : ic('warning', 'alert-ic-warning');
+      h.push('<div class="alert-item ' + (a.level === 'critical' ? 'alert-critical' : 'alert-warning') + '"><span class="alert-icon">' + icon + '</span><div><strong>' + esc(a.type) + '</strong> - ' + esc(a.message) + '<br><small class="sub-text">' + esc(a.timestamp) + '</small></div></div>');
     });
     h.push('</div>');
   } else {
-    h.push('<div class="section-title" id="alerts">🚨 告警信息</div><div class="card" style="text-align:center;color:var(--success);padding:20px">✅ 暂无告警</div>');
+    h.push('<div class="section-title" id="alerts">' + ic('alerts') + ' 告警信息</div><div class="card empty-state">✅ 暂无告警</div>');
   }
   return h.join('');
 }
@@ -222,13 +238,14 @@ function renderAlerts(d) {
 function renderDisks(d) {
   var disks = d.disks || [];
   var h = [];
-  h.push('<div class="section-title" id="disks">💾 磁盘空间</div>');
+  if (disks.length === 0) return sectionEmpty('disks', 'disks', '磁盘空间', '暂无磁盘数据');
+  h.push('<div class="section-title" id="disks">' + ic('disks') + ' 磁盘空间</div>');
   h.push('<div class="grid grid-' + Math.min(Math.max(disks.length, 1), 4) + '">');
   disks.forEach(function (dk) {
     var p = dk.usage_percent || 0;
     h.push('<div class="card"><div class="card-title"><span class="dot" style="background:' + (dk.is_alert ? 'var(--danger)' : 'var(--success)') + '"></span>' + esc(dk.mount) + '</div>');
     h.push('<div class="progress-wrap"><div class="progress-label"><span>' + (dk.used_gb || 0) + 'GB / ' + (dk.total_gb || 0) + 'GB</span><span>' + p + '%</span></div>' + progressBar(p) + '</div>');
-    h.push('<div style="font-size:.82rem;color:var(--text2)">可用: ' + (dk.avail_gb || 0) + 'GB</div></div>');
+    h.push('<div class="sub-text">可用: ' + (dk.avail_gb || 0) + 'GB</div></div>');
   });
   h.push('</div>');
   return h.join('');
@@ -239,7 +256,7 @@ function renderQos(d) {
   var cp = con.partition_constraints || [];
   var h = [];
   if (cp.length > 0) {
-    h.push('<div class="section-title" id="qos">⚙️ QOS 约束条件</div>');
+    h.push('<div class="section-title" id="qos">' + ic('qos') + ' QOS 约束条件</div>');
     h.push('<div class="card"><div class="table-wrap"><table><thead><tr><th>分区</th><th>QOS</th><th>GrpTRES<br><small style="font-weight:400;color:var(--text2)">分区最大总资源</small></th><th>MaxTRES<br><small style="font-weight:400;color:var(--text2)">单任务最大资源</small></th><th>MaxTRESPerUser<br><small style="font-weight:400;color:var(--text2)">用户最大资源</small></th></tr></thead><tbody>');
     cp.forEach(function (c) {
       h.push('<tr><td><strong>' + esc(c.partition) + '</strong></td><td><span class="tag tag-qos">' + esc(c.qos_name) + '</span></td><td>' + esc(c.GrpTRES) + '</td><td>' + esc(c.MaxTRES) + '</td><td>' + esc(c.MaxTRESPerUser) + '</td></tr>');
@@ -253,7 +270,8 @@ function renderQos(d) {
 function renderNodes(d) {
   var nodes = d.nodes || [];
   var h = [];
-  h.push('<div class="section-title" id="nodes">🖥️ 节点状态</div><div class="card"><div class="node-grid">');
+  if (nodes.length === 0) return sectionEmpty('nodes', 'nodes', '节点状态', '暂无节点数据');
+  h.push('<div class="section-title" id="nodes">' + ic('nodes') + ' 节点状态</div><div class="card"><div class="node-grid">');
   nodes.forEach(function (n) {
     var s = (n.state || '').toLowerCase();
     var bg = 'rgba(79,110,247,.05)';
@@ -262,7 +280,7 @@ function renderNodes(d) {
     else if (s === 'alloc') bg = 'rgba(34,197,94,.08)';
     else if (s.includes('down') || s.includes('drain')) bg = 'rgba(239,68,68,.08)';
     var u = n.users || [];
-    h.push('<div class="node-chip" style="background:' + bg + '"><div class="n-name">' + esc(n.name) + '</div><div class="n-state">' + tagState(n.state) + '</div><div style="font-size:.72rem;color:var(--text2);margin-top:2px">' + (n.allocated_cores || 0) + '/' + (n.total_cores || 0) + '核 · ' + (n.jobs_running || 0) + '任务</div>' + (u.length ? '<div style="font-size:.7rem;color:var(--text2)">' + u.map(esc).join(', ') + '</div>' : '') + '</div>');
+    h.push('<div class="node-chip" style="background:' + bg + '"><div class="n-name">' + esc(n.name) + '</div><div class="n-state">' + tagState(n.state) + '</div><div class="sub-text sm">' + (n.allocated_cores || 0) + '/' + (n.total_cores || 0) + '核 · ' + (n.jobs_running || 0) + '任务</div>' + (u.length ? '<div class="sub-text sm">' + u.map(esc).join(', ') + '</div>' : '') + '</div>');
   });
   h.push('</div></div>');
   return h.join('');
@@ -274,13 +292,15 @@ function renderJobs(d) {
   var runJobs = jlist.filter(function (j) { return j.status === 'RUNNING'; });
   var pendJobs = jlist.filter(function (j) { return j.status === 'PENDING'; });
   if (jlist.length > 0) {
-    h.push('<div class="section-title" id="jobs">📋 任务列表 <small style="color:var(--text2);font-weight:400">(' + runJobs.length + ' 运行, ' + pendJobs.length + ' 等待)</small></div>');
+    h.push('<div class="section-title" id="jobs">' + ic('jobs') + ' 任务列表 <small style="color:var(--text2);font-weight:400">(' + runJobs.length + ' 运行, ' + pendJobs.length + ' 等待)</small></div>');
     h.push('<div class="card"><div class="table-wrap"><table><thead><tr><th>Job ID</th><th>名称</th><th>状态</th><th>分区</th><th>用户</th><th>CPU</th><th>运行时间</th><th>时限</th><th>原因</th></tr></thead><tbody>');
     jlist.slice(0, 50).forEach(function (j) {
-      h.push('<tr><td>' + esc(j.job_id) + '</td><td>' + esc(j.name) + '</td><td>' + tagState(j.status) + '</td><td>' + esc(j.partition) + '</td><td>' + esc(j.user) + '</td><td>' + (j.cpus || 0) + '</td><td>' + esc(j.runtime) + '</td><td>' + esc(j.time_limit) + '</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(j.reason) + '">' + esc(j.reason) + '</td></tr>');
+      h.push('<tr><td>' + esc(j.job_id) + '</td><td>' + esc(j.name) + '</td><td>' + tagState(j.status) + '</td><td>' + esc(j.partition) + '</td><td>' + esc(j.user) + '</td><td>' + (j.cpus || 0) + '</td><td>' + esc(j.runtime) + '</td><td>' + esc(j.time_limit) + '</td><td class="cell-ellipsis" title="' + esc(j.reason) + '">' + esc(j.reason) + '</td></tr>');
     });
     if (jlist.length > 50) h.push('<tr><td colspan="9" style="text-align:center;color:var(--text2)">... 仅显示前 50 条，共 ' + jlist.length + ' 条</td></tr>');
     h.push('</tbody></table></div></div>');
+  } else {
+    h.push(sectionEmpty('jobs', 'jobs', '任务列表', '当前无任务'));
   }
   return h.join('');
 }
@@ -289,12 +309,14 @@ function renderUsers(d) {
   var ulist = d.users || [];
   var h = [];
   if (ulist.length > 0) {
-    h.push('<div class="section-title" id="users">👥 用户资源</div>');
+    h.push('<div class="section-title" id="users">' + ic('users') + ' 用户资源</div>');
     h.push('<div class="card"><div class="table-wrap"><table><thead><tr><th>用户</th><th>运行</th><th>等待</th><th>核心</th><th>节点</th><th>分区</th><th>在线</th></tr></thead><tbody>');
     ulist.forEach(function (u) {
       h.push('<tr><td><strong>' + esc(u.username) + '</strong></td><td>' + (u.running_jobs || 0) + '</td><td>' + (u.pending_jobs || 0) + '</td><td>' + (u.total_cores || 0) + '</td><td>' + (u.total_nodes || 0) + '</td><td>' + (u.partitions || []).map(esc).join(', ') + '</td><td>' + (u.is_online ? '<span class="tag tag-online">在线</span>' : '<span style="color:var(--text2)">-</span>') + '</td></tr>');
     });
     h.push('</tbody></table></div></div>');
+  } else {
+    h.push(sectionEmpty('users', 'users', '用户资源', '当前无用户任务'));
   }
   return h.join('');
 }
@@ -303,12 +325,14 @@ function renderOnline(d) {
   var online = d.online_users || [];
   var h = [];
   if (online.length > 0) {
-    h.push('<div class="section-title" id="online">🌐 在线终端</div>');
+    h.push('<div class="section-title" id="online">' + ic('online') + ' 在线终端</div>');
     h.push('<div class="card"><div class="table-wrap"><table><thead><tr><th>用户</th><th>终端</th><th>来源</th><th>登录时间</th><th>空闲</th><th>会话数</th></tr></thead><tbody>');
     online.forEach(function (u) {
       h.push('<tr><td><strong>' + esc(u.username) + '</strong></td><td>' + esc(u.tty) + '</td><td>' + esc(u.from) + '</td><td>' + esc(u.login_time) + '</td><td>' + esc(u.idle) + '</td><td>' + (u.sessions || 1) + '</td></tr>');
     });
     h.push('</tbody></table></div></div>');
+  } else {
+    h.push(sectionEmpty('online', 'online', '在线终端', '当前无在线终端会话'));
   }
   return h.join('');
 }
@@ -364,13 +388,20 @@ function fetchData() {
       }
       var now = new Date();
       var ts = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      $('updateTime').textContent = '最后更新: ' + (d.overview && d.overview.last_updated || '--') + ' · 本地时间：' + ts;
+      lastUpdatedStr = (d.overview && d.overview.last_updated) || '--';
+      $('updateTime').textContent = '最后更新: ' + lastUpdatedStr + ' · 本地时间：' + ts;
+      $('updateTime').classList.remove('badge-warn');
     })
     .catch(function (e) {
       if (tid) clearTimeout(tid);
       console.warn('数据加载失败:' + e.message);
+      var ub = $('updateTime');
       if (!lastData) {
         $('loader').innerHTML = '<div style="color:var(--danger)">❌ 数据加载失败<br><small>' + esc(e.message) + '</small></div>';
+      } else {
+        // 已有旧数据：不再静默，给出明确的刷新失败提示，避免用户看到陈旧数据而无感知
+        ub.textContent = '⚠ 刷新失败 · 上次成功: ' + lastUpdatedStr;
+        ub.classList.add('badge-warn');
       }
     });
 }
@@ -448,7 +479,7 @@ function searchUser(query) {
     // User's jobs
     var userJobs = jlist.filter(function (j) { return j.user === uname; });
     if (userJobs.length > 0) {
-      h.push('<div class="search-result-section"><h4>📋 任务 (' + userJobs.length + ')</h4>');
+      h.push('<div class="search-result-section"><h4>' + ic('jobs') + ' 任务 (' + userJobs.length + ')</h4>');
       h.push('<div class="table-wrap"><table><thead><tr><th>ID</th><th>名称</th><th>状态</th><th>CPU</th><th>运行时间</th></tr></thead><tbody>');
       userJobs.slice(0, 10).forEach(function (j) {
         h.push('<tr><td>' + esc(j.job_id) + '</td><td>' + esc(j.name) + '</td><td>' + tagState(j.status) + '</td><td>' + (j.cpus || 0) + '</td><td>' + esc(j.runtime) + '</td></tr>');
@@ -460,7 +491,7 @@ function searchUser(query) {
     // User's online sessions
     var userOnline = online.filter(function (o) { return o.username === uname; });
     if (userOnline.length > 0) {
-      h.push('<div class="search-result-section"><h4>🌐 在线终端</h4>');
+      h.push('<div class="search-result-section"><h4>' + ic('online') + ' 在线终端</h4>');
       h.push('<div class="table-wrap"><table><thead><tr><th>终端</th><th>来源</th><th>登录时间</th><th>空闲</th></tr></thead><tbody>');
       userOnline.forEach(function (o) {
         h.push('<tr><td>' + esc(o.tty) + '</td><td>' + esc(o.from) + '</td><td>' + esc(o.login_time) + '</td><td>' + esc(o.idle) + '</td></tr>');
