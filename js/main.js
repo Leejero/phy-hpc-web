@@ -337,37 +337,16 @@ function renderOnline(d) {
   return h.join('');
 }
 
-// 平台公告栏目：静态内容（更新策略 + 功能简介），不依赖实时数据
+// 更新策略栏目：静态内容（仅更新策略三枚信息），不依赖实时数据
 function renderAnnouncement() {
   var h = [];
-  h.push('<div class="section-title" id="announcement">' + ic('bullhorn') + ' 平台公告</div>');
+  h.push('<div class="section-title" id="announcement">' + ic('bullhorn') + ' 更新策略</div>');
   h.push('<div class="card announcement-card">');
-
-  // 数据刷新策略：横向三枚信息 pill
-  h.push('<div class="ann-sub">');
-  h.push('<div class="ann-sub-title"><span class="dot"></span>数据刷新策略</div>');
   h.push('<div class="ann-strategy">');
   h.push('<div class="ann-pill"><span class="ann-pill-ico">☀️</span><div class="ann-pill-txt"><b>日间 08:00–24:00</b><span>每 20 分钟自动刷新</span></div></div>');
   h.push('<div class="ann-pill"><span class="ann-pill-ico">🌙</span><div class="ann-pill-txt"><b>夜间 00:00–08:00</b><span>每 2 小时自动刷新</span></div></div>');
   h.push('<div class="ann-pill"><span class="ann-pill-ico">🔄</span><div class="ann-pill-txt"><b>页面轮询</b><span>每 5 分钟核查最新</span></div></div>');
-  h.push('</div></div>');
-
-  // 功能简介：说明 + 九宫格特性卡片
-  h.push('<div class="ann-sub">');
-  h.push('<div class="ann-sub-title"><span class="dot"></span>功能简介</div>');
-  h.push('<p class="ann-intro">面向物理与光电工程学院师生，统一监控 HPC 集群运行状态，便于快速掌握资源占用、排查异常。</p>');
-  h.push('<div class="ann-features">');
-  h.push('<div class="ann-feat"><b>集群概览</b><span>核心/任务/节点/CPU</span></div>');
-  h.push('<div class="ann-feat"><b>分区资源</b><span>核心占用与配额</span></div>');
-  h.push('<div class="ann-feat"><b>告警信息</b><span>节点/磁盘异常</span></div>');
-  h.push('<div class="ann-feat"><b>磁盘空间</b><span>挂载点容量</span></div>');
-  h.push('<div class="ann-feat"><b>QOS 约束</b><span>资源使用上限</span></div>');
-  h.push('<div class="ann-feat"><b>节点状态</b><span>逐节点运行</span></div>');
-  h.push('<div class="ann-feat"><b>任务列表</b><span>运行/等待明细</span></div>');
-  h.push('<div class="ann-feat"><b>用户资源</b><span>占用统计</span></div>');
-  h.push('<div class="ann-feat"><b>在线终端</b><span>登录会话一览</span></div>');
-  h.push('</div></div>');
-
+  h.push('</div>');
   h.push('</div>');
   return h.join('');
 }
