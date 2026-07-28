@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="物理与光电工程学院高性能计算集群实时监控面板：核心使用率、分区资源、节点状态、任务队列与磁盘空间一览。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.statcounter.com https://c.statcounter.com https://www.clarity.ms https://*.clarity.ms; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://c.statcounter.com; connect-src 'self' https://*.clarity.ms; object-src 'none'; base-uri 'self'">
   <title>HPC 集群监控面板 - 物理与光电工程学院</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="stylesheet" href="css/style.css">
-  <!-- Statcounter tracking code for https://leejero.github.io/date/ -->
+  <!-- Statcounter tracking code for https://leejero.github.io/phy-hpc-web/ -->
   <script type="text/javascript">
   var sc_project=13225872; 
   var sc_invisible=0; 
@@ -31,7 +32,7 @@
   <div class="sidebar-brand">
     <h2>⚡ HPC 监控</h2>
     <p>物理与光电工程学院集群</p>
-    <button class="sidebar-close" onclick="toggleSidebar()" title="隐藏侧边栏">☰</button>
+    <button class="sidebar-close" id="sidebarClose" title="隐藏侧边栏" aria-label="隐藏侧边栏">☰</button>
   </div>
   <nav class="sidebar-nav">
     <a href="#overview" class="active" data-section="overview"><span class="nav-icon">📊</span><span>集群概览</span></a>
@@ -55,21 +56,22 @@
 </aside>
 
 <!-- Overlay (click to close sidebar on mobile) -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- Sidebar toggle button -->
-<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="显示侧边栏">☰</button>
+<button class="sidebar-toggle" id="sidebarToggle" title="显示侧边栏" aria-label="显示侧边栏">☰</button>
 
 <!-- Floating notice popup -->
-<div class="float-notice" id="floatNotice" onclick="closeFloatNotice()">
-  <button class="float-notice-close" title="关闭">✕</button>
+<div class="float-notice" id="floatNotice">
+  <button class="float-notice-close" title="关闭" aria-label="关闭通知">✕</button>
   <div class="notice-body">
     <span class="notice-icon">💡</span>
     <span class="notice-title">数据刷新策略</span><br>
     <span class="notice-tag notice-tag-day">☀️ 日间 08:00 – 24:00</span><br>
     <span class="notice-text">数据每 <span class="notice-highlight">20 分钟</span> 自动刷新</span><br>
     <span class="notice-tag notice-tag-night">🌙 夜间 00:00 – 08:00</span><br>
-    <span class="notice-text">数据每 <span class="notice-highlight">2 小时</span> 自动刷新</span>
+    <span class="notice-text">数据每 <span class="notice-highlight">2 小时</span> 自动刷新</span><br>
+    <span class="notice-text" style="font-size:.78em;opacity:.85">（页面每 5 分钟自动检查最新数据）</span>
     <div class="notice-hint">点击任意位置关闭</div>
   </div>
 </div>
@@ -86,7 +88,7 @@
       </span>
     </div>
     <div class="user-search-wrap">
-      <input type="text" id="userSearchInput" placeholder=" 搜索用户名..." autocomplete="off">
+      <input type="text" id="userSearchInput" placeholder=" 搜索用户名..." autocomplete="off" aria-label="搜索用户名">
     </div>
   </div>
   <div class="container" id="app">
@@ -98,7 +100,7 @@
 <footer class="footer" id="footer">开发者：<span class="dev">@Leejero</span> &nbsp;|&nbsp; 物理与光电工程学院高性能计算集群监控系统</footer>
 
 <!-- Back to top -->
-<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶端">↑</button>
+<button class="back-top" id="backTop" title="回到顶端" aria-label="回到顶端">↑</button>
 
 <script src="js/main.js"></script>
 </body>
