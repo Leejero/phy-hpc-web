@@ -40,6 +40,7 @@
   <symbol id="ic-online" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
   <symbol id="ic-incar" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
   <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="ic-bullhorn" viewBox="0 0 24 24"><path d="m3 11 14-7v16L3 11Z"/><path d="M17 7v10"/><path d="M21 9v6"/></symbol>
   <symbol id="ic-critical" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
   <symbol id="ic-warning" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
 </svg>
@@ -52,7 +53,8 @@
     <button class="sidebar-close" id="sidebarClose" title="隐藏侧边栏" aria-label="隐藏侧边栏">✕</button>
   </div>
   <nav class="sidebar-nav">
-    <a href="#overview" class="active" data-section="overview"><span class="nav-icon"><svg class="ic"><use href="#ic-overview"/></svg></span><span>集群概览</span></a>
+    <a href="#announcement" class="active" data-section="announcement"><span class="nav-icon"><svg class="ic"><use href="#ic-bullhorn"/></svg></span><span>平台公告</span></a>
+    <a href="#overview" data-section="overview"><span class="nav-icon"><svg class="ic"><use href="#ic-overview"/></svg></span><span>集群概览</span></a>
     <a href="#partitions" data-section="partitions"><span class="nav-icon"><svg class="ic"><use href="#ic-partitions"/></svg></span><span>分区资源</span></a>
     <a href="#alerts" data-section="alerts"><span class="nav-icon"><svg class="ic"><use href="#ic-alerts"/></svg></span><span>告警信息</span></a>
     <a href="#disks" data-section="disks"><span class="nav-icon"><svg class="ic"><use href="#ic-disks"/></svg></span><span>磁盘空间</span></a>
@@ -78,20 +80,7 @@
 <!-- Sidebar toggle button -->
 <button class="sidebar-toggle" id="sidebarToggle" title="显示侧边栏" aria-label="显示侧边栏">☰</button>
 
-<!-- Floating notice popup -->
-<div class="float-notice" id="floatNotice">
-  <button class="float-notice-close" title="关闭" aria-label="关闭通知">✕</button>
-  <div class="notice-body">
-    <span class="notice-icon"><svg class="ic"><use href="#ic-info"/></svg></span>
-    <span class="notice-title">数据刷新策略</span><br>
-    <span class="notice-tag notice-tag-day">☀️ 日间 08:00 – 24:00</span><br>
-    <span class="notice-text">数据每 <span class="notice-highlight">20 分钟</span> 自动刷新</span><br>
-    <span class="notice-tag notice-tag-night">🌙 夜间 00:00 – 08:00</span><br>
-    <span class="notice-text">数据每 <span class="notice-highlight">2 小时</span> 自动刷新</span><br>
-    <span class="notice-text" style="font-size:.78em;opacity:.85">（页面每 5 分钟自动检查最新数据）</span>
-    <div class="notice-hint">点击任意位置关闭</div>
-  </div>
-</div>
+<!-- 原右下角浮动通知已下线与内容迁移：更新策略现置于"平台公告"栏目（侧边栏 + main.js renderAnnouncement()） -->
 
 <!-- Main content -->
 <main class="main-wrap" id="mainWrap">
