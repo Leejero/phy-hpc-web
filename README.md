@@ -15,6 +15,7 @@
 - 🌐 **在线终端** — 当前在线用户终端信息
 - 📌 **更新策略** — 顶部信息栏展示数据刷新节奏
 - 📖 **INCAR 手册** — VASP INCAR 参数速查（独立页面，参数数据异步加载）
+- 📱 **手机端 App** — 侧边栏扫码下载 Android 客户端（物电 HPC 集群监控），同时提供直接下载与链接复制
 
 ## 技术栈
 
@@ -53,10 +54,12 @@
 ├── data/
 │   ├── slurm.json        # 集群监控数据（已脱敏）
 │   └── incar-data.json   # INCAR 参数数据（607 个参数）
+├── download/
+│   ├── PhyHPC-Monitor.apk    # Android 客户端安装包（扫码下载目标）
+│   └── qrcode-app.png        # 下载直链二维码
 ├── scripts/
-│   └── desensitize_slurm.py  # 用户名/IP 脱敏脚本
-├── .github/workflows/
-│   └── sync-gitee.yml    # GitHub → Gitee 镜像同步
+│   ├── desensitize_slurm.py  # 用户名/IP 脱敏脚本
+│   └── generate_qr.py        # 下载二维码生成脚本
 ├── LICENSE               # MIT 协议
 └── README.md             # 项目说明
 ```
@@ -75,7 +78,7 @@
 
 ## 版本与更新日志
 
-- 当前版本：**V5.0** — 全量详述版（自 `slurm.json` 信息脱敏起的完整改动记录，含 bug 清单）。
+- 当前版本：**V6.0** — 新增手机端 App 扫码下载入口，移除已废弃的 Gitee 同步工作流。
 - 完整变更历史见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 许可

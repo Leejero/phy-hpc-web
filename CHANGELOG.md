@@ -6,6 +6,17 @@
 
 ---
 
+## V6.0 · 2026-10-07 — 手机端 App 扫码下载
+
+- 新增 `download/`：`PhyHPC-Monitor.apk`（Capacitor 打包的 Android 客户端，4.4 MB，ASCII 文件名且不带版本号，换包覆盖即可）+ `qrcode-app.png`（下载直链二维码）。
+- 新增 `scripts/generate_qr.py`：二维码生成脚本（`qrcode[pil]`，纠错等级 H），URL 与输出路径可命令行覆盖。
+- 侧边栏新增「手机端 App」入口（新图标 `ic-phone` / `ic-download`），点击弹出下载弹窗：二维码 + 直接下载 + 复制链接 + 安装说明；遮罩 / `Esc` 关闭，移动端自动收起侧边栏。
+- JS 失效时入口仍可直接下载；二维码经 `zxing-cpp` 解码回读校验，与目标 URL 一致；CSP 未放宽（同源图片）。
+- 安装包下载与安装不依赖校园网，公网环境即可获取。
+- 移除已废弃的 Gitee 镜像同步工作流 `.github/workflows/sync-gitee.yml`（`.github/` 目录随之清空）。
+
+---
+
 ## V5.0 · 2026-07-28 — 全量详述（自 slurm.json 信息脱敏起）
 
 > 本版本为 V5 与 V5.1 的合并重发：删除原 V5 / V5.1 两个发布，统一以 **V5.0** 标记本窗口全部改动。以下按时间顺序逐条详述，含问题定位与 bug 清单。

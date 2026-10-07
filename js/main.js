@@ -556,6 +556,75 @@ function initUserSearch() {
 }
 
 // ============================================================
+// 手机端 App 下载弹窗
+// ============================================================
+
+function initAppModal() {
+  var modal = $('appModal');
+  var entry = $('appDownloadEntry');
+  if (!modal || !entry) return; // 页面未包含该模块时静默跳过
+
+  function openModal() {
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+    // 移动端：弹窗会覆盖侧边栏，先收起避免叠层
+    if (window.innerWidth <= 1024) $('sidebar').classList.remove('open');
+  }
+
+  function closeModal() {
+    modal.classList.remove('show');
+    document.body.classList.remove('modal-open');
+  }
+
+  // 入口：JS 可用时弹出二维码弹窗；JS 失效时 href 直接下载 APK（降级）
+  entry.addEventListener('click', function (e) {
+    e.preventDefault();
+    openModal();
+  });
+
+  var closeBtn = $('appModalClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+  // 点击遮罩空白区域关闭
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) closeModal();
+  });
+
+  // Esc 键关闭
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.classList.contains('show')) closeModal();
+  });
+
+  // 复制下载链接（取 a.href 的绝对地址，自动适配实际部署域名）
+  var copyBtn = $('appCopyLink');
+  var linkEl = $('apkDirectLink');
+  if (copyBtn && linkEl) {
+    copyBtn.addEventListener('click', function () {
+      var url = linkEl.href;
+      function done() {
+        copyBtn.textContent = '已复制 ✓';
+        setTimeout(function () { copyBtn.textContent = '复制下载链接'; }, 1800);
+      }
+      function fallbackCopy() {
+        var ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (err) { /* 复制失败时静默处理 */ }
+        document.body.removeChild(ta);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+    });
+  }
+}
+
+// ============================================================
 // 初始化
 // ============================================================
 
@@ -575,6 +644,7 @@ function initUserSearch() {
 fetchData();
 refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
 initUserSearch();
+initAppModal();
 
 document.addEventListener('visibilitychange', function () {
   if (document.hidden) {

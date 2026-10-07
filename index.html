@@ -43,6 +43,8 @@
   <symbol id="ic-bullhorn" viewBox="0 0 24 24"><path d="m3 11 14-7v16L3 11Z"/><path d="M17 7v10"/><path d="M21 9v6"/></symbol>
   <symbol id="ic-critical" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
   <symbol id="ic-warning" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="ic-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+  <symbol id="ic-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
 </svg>
 
 <!-- Sidebar -->
@@ -69,6 +71,9 @@
 <div class="sidebar-extra">
     <a href="INCAR.html" target="_blank" rel="noopener noreferrer">
         <span><svg class="ic"><use href="#ic-incar"/></svg></span><span>INCAR 手册</span>
+    </a>
+    <a href="download/PhyHPC-Monitor.apk" id="appDownloadEntry" role="button" aria-haspopup="dialog" aria-controls="appModal">
+        <span><svg class="ic"><use href="#ic-phone"/></svg></span><span>手机端 App</span>
     </a>
 </div>
   <div class="sidebar-footer">@Leejero · HPC 监控系统</div>
@@ -102,6 +107,31 @@
 
 <!-- Back to top -->
 <button class="back-top" id="backTop" title="回到顶端" aria-label="回到顶端">↑</button>
+
+<!-- 手机端 App 下载弹窗（扫码安装 Android 客户端） -->
+<div class="modal-overlay" id="appModal">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
+    <button class="modal-close" id="appModalClose" type="button" aria-label="关闭">✕</button>
+    <h3 class="modal-title" id="appModalTitle"><svg class="ic"><use href="#ic-phone"/></svg> 手机端 App</h3>
+    <p class="modal-sub">物电 HPC 集群监控 · Android 客户端</p>
+
+    <div class="qr-frame">
+      <img src="download/qrcode-app.png" alt="扫码下载物电 HPC 集群监控 APK 安装包" width="200" height="200">
+    </div>
+    <p class="qr-tip">用手机相机或浏览器扫码，即可下载安装</p>
+
+    <a class="modal-btn" id="apkDirectLink" href="download/PhyHPC-Monitor.apk" download="物电HPC集群监控.apk">
+      <svg class="ic"><use href="#ic-download"/></svg> 直接下载 APK（4.4 MB）
+    </a>
+    <button class="modal-btn ghost" id="appCopyLink" type="button">复制下载链接</button>
+
+    <ul class="modal-notes">
+      <li>适用系统：Android 7.0 及以上</li>
+      <li>安装时若提示「未知来源应用」，请在系统设置中允许后重试</li>
+      <li>扫码下载与安装无需校园网，公网环境即可获取</li>
+    </ul>
+  </div>
+</div>
 
 <script src="js/main.js"></script>
 </body>
