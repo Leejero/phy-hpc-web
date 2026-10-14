@@ -127,10 +127,25 @@
 
     <ul class="modal-notes">
       <li>当前版本 v1.0.2 · 更新于 2026-10-14</li>
+      <li>今后新版 App 均在此二维码处刷新，扫码即可下载最新版本</li>
       <li>适用系统：Android 7.0 及以上</li>
       <li>安装时若提示「未知来源应用」，请在系统设置中允许后重试</li>
       <li>扫码下载与安装无需校园网，公网环境即可获取</li>
     </ul>
+  </div>
+</div>
+
+<!-- 新版本提示弹窗（屏幕居中，显示 5 秒后自动关闭，可手动关闭） -->
+<div class="notice-overlay" id="appNotice">
+  <div class="notice-card" role="dialog" aria-modal="true" aria-labelledby="appNoticeTitle">
+    <button class="notice-close" id="appNoticeClose" type="button" aria-label="关闭">✕</button>
+    <div class="notice-badge"><svg class="ic"><use href="#ic-phone"/></svg></div>
+    <h3 class="notice-title" id="appNoticeTitle">手机端 App 已迭代</h3>
+    <p class="notice-text">物电 HPC 集群监控 <b>v1.0.2</b> 已发布，安装包体积缩减约 <b>78%</b>，欢迎下载体验。</p>
+    <button class="notice-btn" id="appNoticeGo" type="button">
+      <svg class="ic"><use href="#ic-download"/></svg> 立即下载
+    </button>
+    <p class="notice-countdown">本提示 <span id="appNoticeSec">5</span> 秒后自动关闭</p>
   </div>
 </div>
 

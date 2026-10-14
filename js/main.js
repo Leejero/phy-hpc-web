@@ -11,6 +11,8 @@ var refreshTimer = null;
 var lastData = null;
 var lastRaw = ''; // 上次数据原文，用于内容未变化时跳过重渲染
 var lastUpdatedStr = '--'; // 最近一次成功获取的数据时间，供刷新失败提示使用
+var _dataWarn = false;     // 当前是否处于「刷新失败」状态
+var _clockTimer = null;    // 本地时钟定时器（每秒走动）
 
 // ============================================================
 // 工具函数
@@ -372,6 +374,33 @@ function render(d) {
 }
 
 // ============================================================
+// 顶部时间条（数据时间 + 逐秒走动的本地时间）
+// ------------------------------------------------------------
+// 本地时间由独立的 1 秒时钟驱动。此前它只在请求返回时计算一次，
+// 而页面轮询周期是 5 分钟，导致本地时间「五分钟才跳一次」。
+// ============================================================
+
+function renderTimeBar() {
+  var ub = $('updateTime');
+  if (!ub) return;
+  var clock = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  ub.textContent = (_dataWarn ? '⚠ 刷新失败 · 上次成功: ' + lastUpdatedStr
+                              : '最后更新: ' + lastUpdatedStr)
+    + ' · 本地时间：' + clock;
+  ub.classList.toggle('badge-warn', _dataWarn);
+}
+
+function startClock() {
+  if (_clockTimer) return; // 避免前后台切换时堆积多个定时器
+  renderTimeBar();
+  _clockTimer = setInterval(renderTimeBar, 1000);
+}
+
+function stopClock() {
+  if (_clockTimer) { clearInterval(_clockTimer); _clockTimer = null; }
+}
+
+// ============================================================
 // 数据获取（多源容错）
 // ============================================================
 
@@ -401,22 +430,19 @@ function fetchData() {
         lastData = d;
         render(d); // 内容未变化时跳过重渲染，避免整页 DOM 重建
       }
-      var now = new Date();
-      var ts = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       lastUpdatedStr = (d.overview && d.overview.last_updated) || '--';
-      $('updateTime').textContent = '最后更新: ' + lastUpdatedStr + ' · 本地时间：' + ts;
-      $('updateTime').classList.remove('badge-warn');
+      _dataWarn = false;
+      renderTimeBar();
     })
     .catch(function (e) {
       if (tid) clearTimeout(tid);
       console.warn('数据加载失败:' + e.message);
-      var ub = $('updateTime');
       if (!lastData) {
         $('loader').innerHTML = '<div style="color:var(--danger)">❌ 数据加载失败<br><small>' + esc(e.message) + '</small></div>';
       } else {
         // 已有旧数据：不再静默，给出明确的刷新失败提示，避免用户看到陈旧数据而无感知
-        ub.textContent = '⚠ 刷新失败 · 上次成功: ' + lastUpdatedStr;
-        ub.classList.add('badge-warn');
+        _dataWarn = true;
+        renderTimeBar();
       }
     });
 }
@@ -625,6 +651,96 @@ function initAppModal() {
 }
 
 // ============================================================
+// 新版本提示弹窗（屏幕居中，显示 5 秒后自动收起，可手动关闭）
+// ------------------------------------------------------------
+// 【定时机制】弹窗只在下方 APP_NOTICE 设定的时间窗口内弹出，
+//   未到生效时间或已过期都不会显示（弹窗节点仍保留在页面中，处于隐藏状态）。
+//   —— 发布下一条通知时，只需改这个时间窗口 + index.html 里 #appNotice 的文案，
+//      弹窗的显示、倒计时、关闭、跳转逻辑无需改动，可直接复用。
+// ============================================================
+
+var APP_NOTICE = {
+  // 生效时间窗口。带时区偏移（+08:00）书写，避免不同设备解析出歧义
+  from:  '2026-10-14T00:00:00+08:00',   // 开始显示
+  until: '2026-10-21T23:59:59+08:00'    // 到期后自动失效（本次为发布后一周）
+};
+
+function initAppNotice() {
+  var notice = $('appNotice');
+  if (!notice) return; // 页面未包含该模块时静默跳过
+
+  // 时间窗口判定：未生效或已过期则直接不显示
+  var now = Date.now();
+  var start = Date.parse(APP_NOTICE.from);
+  var end = Date.parse(APP_NOTICE.until);
+  if (!isNaN(start) && now < start) return;
+  if (!isNaN(end) && now > end) return;
+
+  var card = notice.querySelector('.notice-card');
+  var secEl = $('appNoticeSec');
+  var DURATION = 5000;   // 自动关闭时长
+  var DELAY = 700;       // 首屏渲染后再弹出，避免抢注意力
+
+  var openTimer = null, tickTimer = null, outTimer = null;
+  var dismissed = false;
+
+  // 关闭：先播放退场动画，再彻底隐藏并清理全部定时器
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    if (openTimer) clearTimeout(openTimer);
+    if (tickTimer) clearInterval(tickTimer);
+    if (secEl) secEl.textContent = '0';
+    if (card) card.classList.add('out');
+    outTimer = setTimeout(function () {
+      notice.classList.remove('show');
+      if (card) card.classList.remove('out');
+    }, 260);
+  }
+
+  function show() {
+    notice.classList.add('show');
+    if (card) card.classList.remove('out');
+    // 以绝对时间为准倒计时：即使后台标签页被节流，总时长依然准确
+    var deadline = Date.now() + DURATION;
+    function tick() {
+      var left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      if (secEl) secEl.textContent = String(left);
+      if (left <= 0) dismiss();
+    }
+    tick();
+    tickTimer = setInterval(tick, 200);
+  }
+
+  var closeBtn = $('appNoticeClose');
+  if (closeBtn) closeBtn.addEventListener('click', dismiss);
+
+  // 点击遮罩空白区域关闭
+  notice.addEventListener('click', function (e) {
+    if (e.target === notice) dismiss();
+  });
+
+  // Esc 键关闭
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && notice.classList.contains('show')) dismiss();
+  });
+
+  // 「立即下载」：收起提示后打开二维码下载弹窗
+  var goBtn = $('appNoticeGo');
+  if (goBtn) goBtn.addEventListener('click', function () {
+    dismiss();
+    var entry = $('appDownloadEntry');
+    if (entry) entry.click();
+    else {
+      var link = $('apkDirectLink');
+      if (link) window.location.href = link.getAttribute('href');
+    }
+  });
+
+  openTimer = setTimeout(show, DELAY);
+}
+
+// ============================================================
 // 初始化
 // ============================================================
 
@@ -645,15 +761,20 @@ fetchData();
 refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
 initUserSearch();
 initAppModal();
+initAppNotice();
+startClock();
 
 document.addEventListener('visibilitychange', function () {
+  // 先无条件清掉既有定时器，避免前后台快速切换时堆积多个轮询
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
   if (document.hidden) {
-    if (refreshTimer) {
-      clearInterval(refreshTimer);
-      refreshTimer = null;
-    }
+    stopClock(); // 后台停表，省电
   } else {
     fetchData();
     refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
+    startClock();
   }
 });
