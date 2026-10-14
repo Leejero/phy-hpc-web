@@ -6,6 +6,17 @@
 
 ---
 
+## V6.1 · 2026-10-14 — 客户端 APK 更新至 v1.0.2
+
+- `download/PhyHPC-Monitor.apk` 换包：**4.30 MB → 0.95 MB（−78%）**。此前 V6.0 随包分发的是 Capacitor 默认的 **debug 构建**（`debuggable=true` + debug keystore 签名），本次换为正式的 **release 构建**。
+- 包体优化的主要来源：启用 R8 代码压缩与资源压缩（`classes.dex` 3.27 MB → 438 KB）、`INCAR` 参数数据移出安装包改为运行时联网加载（GitHub Pages gzip 后约 275 KB，仅首次打开消耗）、11 份启动图位图改为纯色背景、删除死代码（`dashboard.html` / `main.js` / `style.css`）。
+- 安全加固：`debuggable` 关闭、`allowBackup` 关闭、`usesCleartextTraffic` 保持关闭、FileProvider 路径由外部存储根目录收窄为 `files/` 与 `cache/`、权限维持仅 `INTERNET`。
+- 体验修复：下拉刷新指示器不再与正文重叠、本地时钟恢复逐秒走动、补齐统计卡片语义色（此前 `green` / `cyan` / `orange` 类从未定义）、搜索入口移至首页顶部、`「更多」`页由网格重构为分组列表并加入实时计数、字号到边界即停、修复手册页在 WebView 中的字体自动放大。
+- 界面主题改为毛玻璃 + 渐变浅色，夜间模式同步适配（固定元素使用 `backdrop-filter`，滚动区卡片不启用以保证低端机帧率）。
+- 二维码 `download/qrcode-app.png` 重新生成并解码回读校验，内容仍为 `download/PhyHPC-Monitor.apk` 直链，与原图逐字节一致（文件名刻意不含版本号，换包覆盖即可，故扫码链接无需变更）。
+
+---
+
 ## V6.0 · 2026-10-07 — 手机端 App 扫码下载
 
 - 新增 `download/`：`PhyHPC-Monitor.apk`（Capacitor 打包的 Android 客户端，4.4 MB，ASCII 文件名且不带版本号，换包覆盖即可）+ `qrcode-app.png`（下载直链二维码）。
