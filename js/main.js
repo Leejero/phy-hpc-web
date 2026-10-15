@@ -346,18 +346,28 @@ function renderDisks(d) {
 // 若管理员调整了 QOS，这里的文字需同步更新。
 // ============================================================
 
+// QOS 与分区一一对应，且一个 QOS 下挂着该分区的全体成员（实测 sacctmgr，见
+// data/slurm.json 的 constraints.partition_constraints）——不是「一人一组」：
+//   student → QOS student1（GrpTRES 384 / MaxTRESPerUser 96 / MaxTRESPerJob 48）
+//   teacher → QOS teacher （GrpTRES 528 / MaxTRESPerUser 144 / MaxTRESPerJob 96）
+//   test    → QOS test    （GrpTRES 144 / MaxTRESPerUser 48 / MaxTRESPerJob 48）
+// 三个字段对应的 reason 码互相独立，别混：
+//   GrpTRES         → QOSGrpCpuLimit        全分区合计，别人跑完就轮到你 → 会自动
+//   MaxTRESPerUser  → QOSMaxCpuPerUserLimit 你自己累计，自己别的作业跑完 → 会自动
+//   MaxTRESPerJob   → QOSMaxCpuPerJobLimit  单作业申请超限，Slurm 不会自动
+//                                            降规格，等多久都不会开始 → 须自己改
 var REASON_INFO = [
   { code: 'AssocMaxJobsLimit', seen: true, mode: 'auto',
     desc: '账号运行中作业数达上限' },
 
   { code: 'QOSGrpCpuLimit', seen: true, mode: 'auto',
-    desc: '该 QOS 全体用户核数合计达上限（384/528/144）' },
+    desc: '本分区所有用户核数合计达上限（384/528/144）' },
 
   { code: 'QOSMaxCpuPerUserLimit', seen: true, mode: 'auto',
     desc: '你个人占用核数达上限（96/144/48）' },
 
   { code: 'QOSMaxCpuPerJobLimit', seen: true, mode: 'manual',
-    desc: '单作业申请核数超上限（48/96），须自行减少' },
+    desc: '单作业申请核数超上限（48/96/48），须自行减少' },
 
   { code: 'Resources', seen: false, mode: 'auto',
     desc: '集群暂无满足申请的空闲资源（960 核共用）' },
@@ -502,35 +512,42 @@ function renderPendingReasons(d) {
   }
   h.push('</div>');
 
-  // ---- ② 原因速查（紧凑表格：一行一条，尽量不折行） ----
-  h.push('<div class="table-wrap"><table class="reason-table"><thead><tr>'
-    + '<th>原因码</th><th>含义</th><th>能自动排到吗</th>'
-    + '</tr></thead><tbody>');
+  // ---- ② 原因速查（卡片网格：一条一张卡，一律两行；宽屏两列、窄屏一列） ----
+  h.push('<div class="reason-grid">');
   REASON_INFO.forEach(function (r) {
     var live = null;
     for (var i = 0; i < stat.length; i++) if (stat[i].code === r.code) live = stat[i];
-    // 正在排队的条目整行可点击，点击后定位到任务列表里对应的等待作业。
+    // 正在排队的卡片整卡可点击，点击后定位到任务列表里对应的等待作业。
     // 属性分开拼：class 值走变量、额外属性走 trAttr，避免手写引号时漏掉闭合引号
     //（曾写成 '<tr class="' + ... + '>'，class 值未闭合，浏览器把随后的
     //  '><td class="rc">' 整个吞进 class 属性里，导致原因码单元格消失）
-    var trCls = (r.mode === 'manual' ? 'is-manual ' : '') + (live ? 'is-live is-jump' : '');
-    var trAttr = live ? ' data-jump-reason="' + esc(r.code) + '" title="点击定位到任务列表中等待的作业"' : '';
-    h.push('<tr class="' + trCls + '"' + trAttr + '>');
-    h.push('<td class="rc"><span class="reason-code">' + esc('(' + r.code + ')') + '</span>'
-      + (r.seen ? '<span class="tag tag-seen">常见</span>' : '')
-      + (live ? '<span class="tag tag-live">排队中 ↓</span>' : '')
-      + '</td>');
-    h.push('<td class="rd">' + esc(r.desc) + '</td>');
-    h.push('<td class="ra"><span class="tag ' + (r.mode === 'auto' ? 'tag-auto' : 'tag-manual') + '">'
-      + (r.mode === 'auto' ? '会自动' : '须自己改')
-      + '</span></td>');
-    h.push('</tr>');
+    var cls = 'rg-card' + (r.mode === 'manual' ? ' is-manual' : '') + (live ? ' is-live is-jump' : '');
+    var attr = live ? ' data-jump-reason="' + esc(r.code) + '" title="点击定位到任务列表中等待的作业"' : '';
+    h.push('<div class="' + cls + '"' + attr + '>');
+    // 第一行：原因码 + 标签 + 处置方式（右端贴齐）；第二行：含义。
+    // 标签位只放一枚 —— 「常见」与「排队中」并排时首行会在 1024 宽度下被挤到
+    // 换行，卡片就变成三行。正在排队时「排队中」比「常见」信息量更大，故优先。
+    h.push('<div class="rg-top">');
+    h.push('<span class="reason-code">' + esc('(' + r.code + ')') + '</span>');
+    if (live) h.push('<span class="tag tag-live rg-live-tag">排队中 ↓</span>');
+    else if (r.seen) h.push('<span class="tag tag-seen">常见</span>');
+    h.push('<span class="rg-mode ' + (r.mode === 'auto' ? 'auto' : 'manual') + '">'
+      + (r.mode === 'auto' ? '会自动' : '须自己改') + '</span>');
+    h.push('</div>');
+    h.push('<div class="rg-desc">' + esc(r.desc) + '</div>');
+    h.push('</div>');
   });
-  h.push('</tbody></table></div>');
+  h.push('</div>');
 
+  // 一个作业可能同时撞上多条限制，Slurm 只报「调度尝试中最先遇到的那一个」
+  //（官方 job_reason_codes 原文：only the reason that was encountered by the
+  // attempted scheduling method will be displayed）。实测本集群 job 30801 申请
+  // 96 核（student1 单作业上限 48）却报 QOSGrpCpuLimit —— 标「会自动」的码
+  // 未必真能等到，故提醒用户回头核一下申请核数。
   h.push('<div class="sub-text sm">'
-    + '运行中作业该列显示的是<strong>节点名</strong>，非等待原因；'
-    + '未收录的原因码会标红显示。'
+    + '运行中作业该列显示的是<strong>节点名</strong>，非等待原因；未收录的原因码会标红显示。'
+    + '一个作业可能同时被多条限制拦住，此处只显示 Slurm <strong>最先遇到</strong>的那一个 —— '
+    + '标「会自动」的原因仍建议核对申请核数是否超过单作业上限（48/96/48）。'
     + '</div>');
   h.push('</div>');
   return h.join('');

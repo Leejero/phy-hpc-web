@@ -6,6 +6,27 @@
 
 ---
 
+## V6.3 · 2026-10-15 — 吸顶顶栏下滚收起 + QOS 板块新增「排队原因速查」
+
+### 排队原因速查（嵌于「QOS 与排队」板块内）
+
+- 新增板块，解释 `squeue` 中 `PENDING` 作业的等待原因。收录 **6 条**，不做官方 100+ 项全量搬运：`AssocMaxJobsLimit` / `QOSGrpCpuLimit` / `QOSMaxCpuPerUserLimit` / `QOSMaxCpuPerJobLimit`（以上为本集群 351 份历史快照中实际出现过的，出现次数依次 740 / 375 / 113 / 45）与 `Resources` / `Priority`。
+- 每条给三样信息：**原因码**、**含义**（括号内附本集群实测阈值）、**能否自动排到**。`QOSMaxCpuPerJobLimit` 是唯一的「等也没用」——Slurm 不会自动降规格，必须减少申请核数重投，故卡片左侧标红条区分。
+- 阈值取自 `data/slurm.json` 的 `constraints.partition_constraints`（集群端 `sacctmgr` 采集）。QOS 与分区一一对应，且**一个 QOS 下挂着该分区的全体成员**，并非「一人一组」：student → `student1`（组 384 / 单用户 96 / 单作业 48）、teacher → `teacher`（528 / 144 / 96）、test → `test`（144 / 48 / 48）。三个字段对应的 reason 码互相独立，不可混为一谈：`GrpTRES`→`QOSGrpCpuLimit`（全分区合计，他人作业结束即轮到你）、`MaxTRESPerUser`→`QOSMaxCpuPerUserLimit`（你自己累计）、`MaxTRESPerJob`→`QOSMaxCpuPerJobLimit`（单作业超限）。
+- 板块顶部为**当前实况**：按出现次数排序，显示每个原因正在排队的作业数与最长已等时长。等待时长以 `overview.last_updated` 为基准而非浏览器本地时间，避免时区与时钟偏差。
+- **点击即定位**：实况标签与速查卡片（正在排队的那几条）均可点击，滚动到任务列表中因该原因等待的作业，并高亮**全部**命中行（同原因多个作业会一起亮），2.4 秒后自动褪去。原因码按 Slurm 的括号形式解析，兼容复合串。
+- 排版演进：卡片列表 → 紧凑表格（篇幅过长，两轮瘦身）→ 三列居中 → **卡片网格两行式**（当前）。最终形态为「一条一张卡、一律两行」：首行原因码 + 标签 + 处置方式，次行含义；**显式锁两列**（不用 `auto-fit`，宽屏会自动排成三列导致卡片变窄、首行标签换行），641px 以下转单列、描述降半档字号。
+- 说明行提示「一个作业可能同时被多条限制拦住，此处只显示 Slurm **最先遇到**的那一个」。依据官方 `job_reason_codes`：*only the reason that was encountered by the attempted scheduling method will be displayed* —— 不是固定的优先级表，而是当次调度尝试中最先撞上的那条。实测本集群 job 30801（student 分区、申请 **96** 核、`student1` 单作业上限 **48**）报的却是 `QOSGrpCpuLimit`，即「会自动」的码背后可能藏着根本等不到的单作业超限；故同时提示回头核对申请核数。
+
+### 吸顶顶栏
+
+- 顶栏改为全局常驻吸顶；**下滚时收起为单行**，只保留「最后更新 + 本地时间」徽标，高度 207px → 55px（−73%）。
+- ⚠ 顶栏必须用 `position: fixed` 而非 `sticky`：sticky 在文档流中占位，收起会使 `document.scrollHeight` 变化，Chrome 的 Scroll Anchoring 随即反向补偿 `scrollY`，反过来再次触发展开——形成自激振荡（实测 2 秒内 class 来回切换 28~63 次，且与阈值大小无关）。占位改由 `.header-spacer` 承担，高度由 JS 实测写入。
+- 迟滞阈值（`HEADER_DOWN=140` / `HEADER_UP=80`）防临界点微抖；侧栏锚点跳转与滚动高亮按落点状态动态取顶栏高度，收起时不残留空白。
+- 测量顶栏高度须先加 `.measuring`（连同其后代禁用 transition），否则读到的是过渡中间值（55px 被读成 185px）。
+
+---
+
 ## V6.2 · 2026-10-14 — 客户端 v1.0.3（夜间模式按钮文案修正）
 
 - 修正 App 右上角溢出菜单的「夜间模式」文案：该文案原先写死在 `index.html` 中、不随状态变化，进入夜间模式后菜单里仍显示「夜间模式」，容易被误解为"没有生效"。现改为按当前状态显示**反操作**——夜间模式下显示「日间模式」（配太阳图标），日间模式下显示「夜间模式」（配月亮图标），并同步 `aria-label`。菜单展开前与切换之后都会刷新，首屏亦按当前状态初始化，保证任何时刻文案都与实际状态一致。

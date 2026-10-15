@@ -265,8 +265,6 @@ tr:hover td { background:rgba(79,110,247,.04); }
 /* 排队原因说明用的标签 */
 .tag-seen { background:rgba(79,110,247,.14); color:var(--primary); }
 .tag-live { background:rgba(245,158,11,.18); color:#854d0e; }
-.tag-auto { background:rgba(34,197,94,.14); color:#166534; }
-.tag-manual { background:rgba(239,68,68,.14); color:#991b1b; }
 
 /* ===== 排队原因说明（嵌于 QOS 板块，见 renderPendingReasons） ===== */
 .reason-block { margin-top:var(--sp-5); padding-top:var(--sp-4); border-top:1px dashed var(--border); }
@@ -285,34 +283,43 @@ tr:hover td { background:rgba(79,110,247,.04); }
 .reason-live-chip.is-jump.is-unknown:hover { background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.45); }
 .reason-live-empty { font-size:.85rem; color:var(--text2); }
 
-/* 原因速查表：一行一条，比卡片列表省一半以上高度。
-   不用 table-layout:fixed —— 列宽交给浏览器按内容分配，中等宽度下不会把
-   原因码列挤到折行。 */
-.reason-table { font-size:.83rem; }
-/* 三列（表头与内容）统一居中 */
-.reason-table th { padding:7px 10px; text-align:center; }
-.reason-table td { padding:7px 10px; text-align:center; vertical-align:middle; }
-/* width:1px + nowrap 是让表格列「收缩到内容宽度」的写法：
-   这样左右两列固定为内容宽度，多余空间全部由「含义」列吸收，
-   否则 auto 布局会把宽屏多余空间按内容比例摊给原因码列（曾撑到六成） */
-.reason-table td.rc { width:1px; white-space:nowrap; }
-.reason-table td.rd { width:auto; }
-.reason-table td.ra { width:1px; text-align:center; white-space:nowrap; }
-.reason-table td.rc .tag { margin-left:6px; vertical-align:1px; }
+/* 原因速查：卡片网格。一条一张卡、一律两行 —— 首行「原因码 + 标签 + 处置方式」，
+   次行含义。比表格轻盈：没有表头与竖线，卡片自带边界，阅读顺序自上而下一路到底。
+   列数显式锁两列（不用 auto-fit：宽屏会自动排成三列，卡片变窄后首行标签容易换行） */
+.reason-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+@media(min-width:641px) { .reason-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+.rg-card {
+  position:relative; overflow:hidden;
+  padding:10px 14px 11px 16px;
+  border:1px solid var(--border); border-radius:10px;
+  background:rgba(255,255,255,.6);
+}
+/* 左侧彩条区分处置方式：绿=会自动排到，红=须自己改 */
+.rg-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:rgba(34,197,94,.5);
+}
+.rg-card.is-manual::before { background:rgba(239,68,68,.55); }
+.rg-card.is-live { background:rgba(245,158,11,.07); border-color:rgba(245,158,11,.26); }
+/* 正在排队的卡片整卡可点击 → 跳到任务列表里对应的等待作业 */
+.rg-card.is-jump { cursor:pointer; transition:background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.rg-card.is-jump:hover { background:rgba(79,110,247,.09); border-color:rgba(79,110,247,.3); box-shadow:0 2px 12px rgba(79,110,247,.12); }
+.rg-card.is-jump:active { background:rgba(79,110,247,.16); }
+.rg-card.is-live.is-jump:hover { background:rgba(245,158,11,.14); border-color:rgba(245,158,11,.5); }
+.rg-top { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+.rg-top .tag { font-size:.68rem; padding:1px 8px; }
+/* 「排队中」推到卡片右上角，把左端原因码与右端处置方式之间的空隙占满 */
+.rg-live-tag { margin-left:auto; }
+.rg-desc { font-size:.82rem; line-height:1.55; }
+/* 处置方式贴卡片右端，与第一行原因码左右分踞 —— 两行卡片的信息主干 */
+.rg-mode { margin-left:auto; font-size:.72rem; font-weight:600; white-space:nowrap; }
+.rg-mode.auto { color:#166534; }
+.rg-mode.manual { color:#991b1b; }
+.rg-mode::before { content:'●'; margin-right:5px; font-size:.6rem; vertical-align:1.5px; }
 .reason-code {
   font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size:.78rem; font-weight:600; color:var(--primary);
 }
-.reason-table tr.is-live td { background:rgba(245,158,11,.06); }
-/* 唯一需要用户动手的一类（Slurm 不会自动降规格），左侧加红条以示区别 */
-.reason-table tr.is-manual td.rc { box-shadow:inset 3px 0 0 rgba(239,68,68,.55); }
-/* 正在排队的条目整行可点击 → 跳转到任务列表中对应的等待作业 */
-.reason-table tr.is-jump { cursor:pointer; }
-.reason-table tr.is-jump:hover td { background:rgba(79,110,247,.08); }
-.reason-table tr.is-jump:active td { background:rgba(79,110,247,.16); }
-.reason-table tr.is-jump.is-manual:hover td { background:rgba(239,68,68,.07); }
-/* 板块内的说明文字同样居中，与整表对齐 */
-.reason-block > .sub-text.sm { text-align:center; }
 
 /* 从「排队原因」跳转命中时的任务高亮：在长表里一眼找到是哪几条作业在等 */
 #jobTable tbody tr.row-hit td { background:rgba(79,110,247,.16); transition:background-color .6s ease; }
@@ -588,25 +595,15 @@ body.modal-open { overflow: hidden; }
 }
 
 @media(max-width:640px) {
-  /* 窄屏下原因表改为两行式：首行「原因码 + 标签 | 状态」，次行整行放含义。
-     三列表格在窄屏会把每条挤成三行，换成块状后每条约省一行。 */
-  .reason-table { font-size:.8rem; }
-  .reason-table thead { display:none; }
-  .reason-table tr {
-    display:grid; grid-template-columns:minmax(0,1fr) auto;
-    align-items:center; gap:2px 8px; padding:9px 10px;
-    border-bottom:1px solid rgba(79,110,247,.06);
-  }
-  /* tr 转 grid 后原表格布局失效，td 需重置为块级。
-     注意 .reason-table td.rc 等选择器特异性高于 .reason-table td，
-     宽度重置必须写在同特异性的规则里，否则 width:1px 会继续生效（曾把列压成 1px） */
-  .reason-table td { display:block; padding:0; border:0; text-align:center; }
-  .reason-table td.rc { grid-column:1; grid-row:1; width:auto; }
-  .reason-table td.ra { grid-column:2; grid-row:1; width:auto; text-align:center; white-space:nowrap; }
-  .reason-table td.rd { grid-column:1 / -1; grid-row:2; width:auto; }
-  .reason-table td.rc .tag { display:inline-block; margin:0 0 0 6px; }
-  .reason-table tr:hover td { background:transparent; }
-  .reason-table tr.is-live { background:rgba(245,158,11,.06); }
+  /* 窄屏下原因卡片改单列（auto-fit 本就会在放不下两列时自动降列，
+     这里显式声明是为了让 300px 最小列宽不会撑破更窄的视口）。
+     单列时卡片收窄，「排队中」标签会挤掉一行 —— 隐藏它，
+     排队状态由卡片浅橙底与顶部实况标签承担，卡片保持两行。 */
+  .reason-grid { grid-template-columns: 1fr; }
+  .rg-card { padding:9px 12px 10px 14px; }
+  .rg-live-tag { display:none; }
+  /* 单列时卡片窄，描述降半档字号，让最长的一条（QOSGrpCpuLimit）仍收在两行内 */
+  .rg-desc { font-size:.78rem; }
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .header h1 { font-size:1.2rem; }
   .header p { font-size:.82rem; }
