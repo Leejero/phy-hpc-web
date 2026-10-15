@@ -340,10 +340,13 @@ function renderDisks(d) {
 // 故只收录两类：
 //   ① seen:true  —— 本集群历史数据（351 份快照）中实际出现过的 4 种
 //   ② seen:false —— 依本集群配置与常见用法判断的高概率原因 6 种
-// mode 表示排队能否自行解决：auto=会自动开始 / manual=必须自己改 /
-// cond=取决于前序作业成败
-// 阈值取自 data/slurm.json 的 constraints.partition_constraints，
-// 若管理员调整了 QOS，这里的文字需同步更新。
+// mode 表示排队能否自行解决：auto=会自动开始 / manual=必须自己改
+//
+// 阈值**不写死在文案里**：卡片的括号数字由 qosLimitText() 在渲染时从
+// data/slurm.json 的 constraints.partition_constraints 实时读取（该字段由
+// collector 每轮跑 `sacctmgr show qos -P` 现采现写）。管理员调整 QOS 后，
+// 卡片数字与上方阈值表会一起变，不会出现「上面 128、下面还写 96」的自相矛盾。
+// 每一项用 dyn 指明取哪个字段，不再有需要人工同步的数字。
 // ============================================================
 
 // QOS 与分区一一对应，且一个 QOS 下挂着该分区的全体成员（实测 sacctmgr，见
@@ -360,21 +363,59 @@ var REASON_INFO = [
   { code: 'AssocMaxJobsLimit', seen: true, mode: 'auto',
     desc: '账号运行中作业数达上限' },
 
-  { code: 'QOSGrpCpuLimit', seen: true, mode: 'auto',
-    desc: '本分区所有用户核数合计达上限（384/528/144）' },
+  // dyn 指定阈值取哪个字段；GrpTRES=分区合计 / MaxTRESPerUser=单人合计 /
+  // MaxTRES=单人单作业。三个字段在 Slurm 里互相独立，别混
+  { code: 'QOSGrpCpuLimit', seen: true, mode: 'auto', dyn: 'GrpTRES',
+    desc: '本分区所有用户核数合计达上限' },
 
-  { code: 'QOSMaxCpuPerUserLimit', seen: true, mode: 'auto',
-    desc: '你个人占用核数达上限（96/144/48）' },
+  { code: 'QOSMaxCpuPerUserLimit', seen: true, mode: 'auto', dyn: 'MaxTRESPerUser',
+    desc: '你个人占用核数达上限' },
 
-  { code: 'QOSMaxCpuPerJobLimit', seen: true, mode: 'manual',
-    desc: '单作业申请核数超上限（48/96/48），须自行减少' },
+  { code: 'QOSMaxCpuPerJobLimit', seen: true, mode: 'manual', dyn: 'MaxTRES',
+    desc: '单作业申请核数超上限，须自行减少' },
 
-  { code: 'Resources', seen: false, mode: 'auto',
-    desc: '集群暂无满足申请的空闲资源（960 核共用）' },
+  // dynCluster：括号里是集群总核数，同样实时读取（扩机器后不用改代码）
+  { code: 'Resources', seen: false, mode: 'auto', dynCluster: true,
+    desc: '集群暂无满足申请的空闲资源' },
 
   { code: 'Priority', seen: false, mode: 'auto',
     desc: '有更高优先级的作业在前' }
 ];
+
+// 把 "cpu=384" / "384" / "cpu=384,mem=1T" 统一解析成 "384"；解析不出返回 ''
+function qosCpuNum(v) {
+  var s = String(v == null ? '' : v);
+  var m = s.match(/cpu\s*=\s*(\d+)/i);
+  if (m) return m[1];
+  m = s.match(/^\s*(\d+)\s*$/);
+  return m ? m[1] : '';
+}
+
+// 按 partition_constraints 的**数组顺序**抽出各分区阈值，拼成 "384/528/144"。
+// 顺序与上方「各分区 QOS 阈值」表同源（同一个数组），故两者天然对齐；QOS 一改两处一起变。
+// 任一分区缺该字段即整体返回 ''（宁可不显示，也不显示缺项错位的数字）。
+function qosLimitText(d, field) {
+  var cp = (d && d.constraints && d.constraints.partition_constraints) || [];
+  if (!cp.length || !field) return '';
+  var vals = [];
+  for (var i = 0; i < cp.length; i++) {
+    var n = qosCpuNum(cp[i][field]);
+    if (!n) return '';
+    vals.push(n);
+  }
+  return vals.join('/');
+}
+
+// 集群总核数（「Resources」卡括号里那句）同样不写死 —— 加机器后自动跟随。
+// 优先取 constraints.cluster_shared_resources，回退到 overview.fixed_config。
+function clusterCoresText(d) {
+  var v = '';
+  var cs = d && d.constraints && d.constraints.cluster_shared_resources;
+  if (cs && cs.total_cores) v = cs.total_cores;
+  else if (d && d.overview && d.overview.fixed_config) v = d.overview.fixed_config.total_cores;
+  v = String(v == null ? '' : v);
+  return /^\d+$/.test(v) ? (v + ' 核共用') : '';
+}
 
 // 从 squeue 的 reason 字段里抽出原因码。
 // Slurm 原样输出的形态是 (AssocMaxJobsLimit)，少数情况会有多个或为空。
@@ -534,7 +575,10 @@ function renderPendingReasons(d) {
     h.push('<span class="rg-mode ' + (r.mode === 'auto' ? 'auto' : 'manual') + '">'
       + (r.mode === 'auto' ? '会自动' : '须自己改') + '</span>');
     h.push('</div>');
-    h.push('<div class="rg-desc">' + esc(r.desc) + '</div>');
+    // 括号里的阈值实时读自 constraints（dyn=QOS 字段 / dynCluster=集群总核数）；
+    // 数据缺失就不显示括号，宁可留白也不写一个可能与服务器不符的数字
+    var lim = r.dyn ? qosLimitText(d, r.dyn) : (r.dynCluster ? clusterCoresText(d) : '');
+    h.push('<div class="rg-desc">' + esc(r.desc) + (lim ? '（' + esc(lim) + '）' : '') + '</div>');
     h.push('</div>');
   });
   h.push('</div>');
@@ -544,10 +588,13 @@ function renderPendingReasons(d) {
   // attempted scheduling method will be displayed）。实测本集群 job 30801 申请
   // 96 核（student1 单作业上限 48）却报 QOSGrpCpuLimit —— 标「会自动」的码
   // 未必真能等到，故提醒用户回头核一下申请核数。
+  // 与卡片同源：句中的单作业上限同样实时读取，避免这里漏改
+  var jobLim = qosLimitText(d, 'MaxTRES');
   h.push('<div class="sub-text sm">'
     + '运行中作业该列显示的是<strong>节点名</strong>，非等待原因；未收录的原因码会标红显示。'
     + '一个作业可能同时被多条限制拦住，此处只显示 Slurm <strong>最先遇到</strong>的那一个 —— '
-    + '标「会自动」的原因仍建议核对申请核数是否超过单作业上限（48/96/48）。'
+    + '标「会自动」的原因仍建议核对申请核数是否超过单作业上限'
+    + (jobLim ? '（' + esc(jobLim) + '）' : '') + '。'
     + '</div>');
   h.push('</div>');
   return h.join('');
