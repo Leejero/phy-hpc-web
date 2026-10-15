@@ -170,7 +170,10 @@ body {
 .header .badge { display:inline-block; background:rgba(79,110,247,.1); color:var(--primary); padding:3px 12px; border-radius:var(--radius-pill); font-size:.8rem; margin-top:8px; }
 
 /* ===== Layout ===== */
-.container { max-width:1100px; margin:0 auto; padding:var(--sp-5) var(--sp-4) 80px; width:100%; }
+/* 顶栏吸顶后自身即为视觉分隔，容器上内边距收窄，
+   避免顶栏下方出现一条明显空带（原 --sp-5=24px + 首标题 28px 外边距） */
+.container { max-width:1100px; margin:0 auto; padding:var(--sp-2) var(--sp-4) 80px; width:100%; }
+.container > .section-title:first-child { margin-top: 0; }
 .grid { display:grid; gap:var(--sp-4); }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
