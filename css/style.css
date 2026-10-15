@@ -284,8 +284,8 @@ tr:hover td { background:rgba(79,110,247,.04); }
 
 /* 原因速查表：一行一条，比卡片列表省一半以上高度 */
 .reason-table { font-size:.83rem; }
-.reason-table th { padding:9px 10px; }
-.reason-table td { padding:9px 10px; text-align:left; vertical-align:top; }
+.reason-table th { padding:7px 10px; }
+.reason-table td { padding:7px 10px; text-align:left; vertical-align:middle; }
 .reason-table td.rc { white-space:normal; overflow-wrap:anywhere; }
 .reason-table td.ra { text-align:center; white-space:nowrap; }
 .reason-table td.rc .tag { margin-left:6px; vertical-align:1px; }
@@ -293,8 +293,6 @@ tr:hover td { background:rgba(79,110,247,.04); }
   font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size:.78rem; font-weight:600; color:var(--primary);
 }
-.reason-table .rm-desc { color:var(--text); }
-.reason-table .rm-act { color:var(--text2); font-size:.79rem; margin-left:6px; }
 .reason-table tr.is-live td { background:rgba(245,158,11,.06); }
 
 /* ===== Alert ===== */
@@ -567,11 +565,22 @@ body.modal-open { overflow: hidden; }
 }
 
 @media(max-width:640px) {
-  /* 窄屏下原因表压缩内边距，标签换行堆叠，避免横向溢出 */
+  /* 窄屏下原因表改为两行式：首行「原因码 + 标签 | 状态」，次行整行放含义。
+     三列表格在窄屏会把每条挤成三行，换成块状后每条约省一行。 */
   .reason-table { font-size:.8rem; }
-  .reason-table th, .reason-table td { padding:8px 7px; }
-  .reason-table td.rc .tag { display:block; margin:4px 0 0; width:max-content; }
-  .reason-table td.ra { white-space:normal; }
+  .reason-table thead { display:none; }
+  .reason-table tr {
+    display:grid; grid-template-columns:minmax(0,1fr) auto;
+    align-items:center; gap:2px 8px; padding:9px 10px;
+    border-bottom:1px solid rgba(79,110,247,.06);
+  }
+  .reason-table td { display:block; padding:0; border:0; text-align:left; }
+  .reason-table td.rc { grid-column:1; grid-row:1; }
+  .reason-table td.ra { grid-column:2; grid-row:1; text-align:right; white-space:nowrap; }
+  .reason-table td.rd { grid-column:1 / -1; grid-row:2; }
+  .reason-table td.rc .tag { display:inline-block; margin:0 0 0 6px; }
+  .reason-table tr:hover td { background:transparent; }
+  .reason-table tr.is-live { background:rgba(245,158,11,.06); }
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .header h1 { font-size:1.2rem; }
   .header p { font-size:.82rem; }

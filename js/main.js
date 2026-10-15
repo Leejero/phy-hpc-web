@@ -348,44 +348,34 @@ function renderDisks(d) {
 
 var REASON_INFO = [
   { code: 'AssocMaxJobsLimit', seen: true, mode: 'auto',
-    desc: '账号同时运行的作业数达上限（账号级 MaxJobs）',
-    act: '等自己的作业跑完，或把多个小算例合并成一个作业' },
+    desc: '账号运行中作业数达上限' },
 
   { code: 'QOSGrpCpuLimit', seen: true, mode: 'auto',
-    desc: '该 QOS 全体用户合计占用的核数达上限（384 / 528 / 144 核）',
-    act: '等别人释放，尽量避开白天高峰' },
+    desc: '该 QOS 全体用户核数合计达上限（384/528/144）' },
 
   { code: 'QOSMaxCpuPerUserLimit', seen: true, mode: 'auto',
-    desc: '你个人在该 QOS 下占用的核数达上限（96 / 144 / 48 核）',
-    act: '等自己的作业结束；提交前先算已占多少核' },
+    desc: '你个人占用核数达上限（96/144/48）' },
 
   { code: 'QOSMaxCpuPerJobLimit', seen: true, mode: 'manual',
-    desc: '单个作业申请的核数超过上限（48 / 96 核）',
-    act: 'Slurm 不会自动降规格，必须自己减少核数申请' },
+    desc: '单作业申请核数超上限（48/96），须自行减少' },
 
   { code: 'AssocGrpCpuLimit', seen: false, mode: 'auto',
-    desc: '账号组合计核数达上限，通常是整个课题组加总',
-    act: '等组内释放；长期打满说明是结构性排队，需错峰' },
+    desc: '账号组合计核数达上限（整个课题组）' },
 
   { code: 'MaxJobsPerAccount', seen: false, mode: 'auto',
-    desc: '该账号在此 QOS 下提交或运行的作业数超限',
-    act: '减少同时提交数，改用作业数组或串行脚本' },
+    desc: '该账号在此 QOS 的作业数超限' },
 
   { code: 'QOSMaxMemPerUser', seen: false, mode: 'auto',
-    desc: '你个人的内存占用达上限',
-    act: '轻则排队、重则作业被杀；核实 --mem 是否申请过大' },
+    desc: '你个人内存占用达上限（重则被杀）' },
 
   { code: 'Resources', seen: false, mode: 'auto',
-    desc: '集群暂时凑不齐你申请的资源（全集群 960 核，三分区共用）',
-    act: '缩小申请规模通常排得更快，换分区不会变出机器' },
+    desc: '集群暂无满足申请的空闲资源（960 核共用）' },
 
   { code: 'Priority', seen: false, mode: 'auto',
-    desc: '有更高优先级的作业排在前面',
-    act: '安心等待，公平分享策略会自动调节优先级' },
+    desc: '有更高优先级的作业在前' },
 
   { code: 'Dependency', seen: false, mode: 'cond',
-    desc: '--dependency 指定的前序作业尚未正常结束',
-    act: '前序失败则依赖永不满足，需重新提交本作业' }
+    desc: '--dependency 指定的前序作业未正常结束' }
 ];
 
 // 从 squeue 的 reason 字段里抽出原因码。
@@ -434,7 +424,7 @@ function renderPendingReasons(d) {
   var h = [];
 
   h.push('<div class="reason-block">');
-  h.push('<div class="card-title"><span class="dot"></span>排队时「原因」列是什么意思</div>');
+  h.push('<div class="card-title"><span class="dot"></span>排队原因速查</div>');
 
   // ---- ① 当前实况 ----
   var now = dataNowMs();
@@ -464,9 +454,9 @@ function renderPendingReasons(d) {
   }
   h.push('</div>');
 
-  // ---- ② 原因速查（紧凑表格：一行一条，避免占满整屏） ----
+  // ---- ② 原因速查（紧凑表格：一行一条，尽量不折行） ----
   h.push('<div class="table-wrap"><table class="reason-table"><thead><tr>'
-    + '<th>原因码</th><th>含义与应对</th><th>能否自动开始</th>'
+    + '<th>原因码</th><th>含义</th><th>能自动排到吗</th>'
     + '</tr></thead><tbody>');
   REASON_INFO.forEach(function (r) {
     var live = null;
@@ -476,19 +466,18 @@ function renderPendingReasons(d) {
       + (r.seen ? '<span class="tag tag-seen">常见</span>' : '')
       + (live ? '<span class="tag tag-live">排队中</span>' : '')
       + '</td>');
-    h.push('<td class="rd"><span class="rm-desc">' + esc(r.desc) + '</span>'
-      + '<span class="rm-act">→ ' + esc(r.act) + '</span></td>');
+    h.push('<td class="rd">' + esc(r.desc) + '</td>');
     h.push('<td class="ra"><span class="tag '
       + (r.mode === 'auto' ? 'tag-auto' : r.mode === 'manual' ? 'tag-manual' : 'tag-cond') + '">'
-      + (r.mode === 'auto' ? '会自动开始' : r.mode === 'manual' ? '须自己修改' : '视前序作业')
+      + (r.mode === 'auto' ? '会自动' : r.mode === 'manual' ? '须自己改' : '看前序')
       + '</span></td>');
     h.push('</tr>');
   });
   h.push('</tbody></table></div>');
 
   h.push('<div class="sub-text sm">'
-    + '注：运行中作业的「原因」列显示的是<strong>节点名</strong>（如 comput03），不是等待原因；'
-    + '遇到本表未列出的原因码，请把 squeue 的完整输出发给集群管理员。'
+    + '运行中作业该列显示的是<strong>节点名</strong>（如 comput03），非等待原因；'
+    + '其他原因码请发给管理员。'
     + '</div>');
   h.push('</div>');
   return h.join('');
