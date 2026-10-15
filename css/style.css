@@ -153,11 +153,31 @@ body {
   border-bottom:1px solid rgba(79,110,247,.1);
   color:var(--text); padding:24px 0 18px; text-align:center;
   /* 全局常驻：随页面滚动固定在视口顶部，不再滚走。
-     z-index 150 —— 低于侧边栏(200)与侧栏开关(180)，高于正文内容 */
-  position: sticky; top: 0; z-index: 150;
-  /* 背景透明度与高度随滚动状态平滑过渡（见下方 .scrolled） */
-  transition: background .28s ease, border-color .28s ease, box-shadow .28s ease, padding .3s ease;
+     z-index 150 —— 低于侧边栏(200)与侧栏开关(180)，高于正文内容
+
+     这里必须用 fixed 而非 sticky：
+     sticky 元素在文档流中占位，顶栏收起时占位高度 180px→55px，
+     文档总高度随之变化，浏览器的「滚动锚定」(Scroll Anchoring) 会把这次
+     高度突变当成内容布局变化，反向补偿 scrollY —— scrollY 被拉回阈值以下，
+     顶栏又展开、文档又变高、scrollY 再被拉回，形成自激振荡。
+     实测（手指静止、仅一次 scrollTo）：2 秒内 scrolled 类切换 28~63 次。
+     改为 fixed 后占位交给下方固定高度的 .header-spacer，
+     顶栏收缩不再改变文档总高度，反馈回路被彻底切断。 */
+  position: fixed; top: 0; right: 0; left: var(--sidebar-w); z-index: 150;
+  /* 背景透明度与高度随滚动状态平滑过渡（见下方 .scrolled）；
+     left 跟随侧边栏收展做过渡，避免宽度突变 */
+  transition: background .28s ease, border-color .28s ease, box-shadow .28s ease,
+              padding .3s ease, left .3s ease;
 }
+/* 顶栏脱离文档流后的占位块，高度由 JS 同步为顶栏展开高度 */
+.header-spacer { flex: none; }
+/* 瞬时测量顶栏高度（折叠态高度 / resize 时重算占位）时临时挂 .measuring：
+   连同所有后代一起禁用过渡，否则读到的会是过渡的起点值
+   ——实测量到 185px 而非真实的 55px。 */
+.header.measuring,
+.header.measuring * { transition: none !important; }
+/* 用户折叠侧栏时，main-wrap 会带上 .full，顶栏同步占满整个视口宽度 */
+.main-wrap.full .header { left: 0; }
 /* 向下滚动后转为更通透的半透明，并收起标题/副标题/搜索框，
    只保留「更新时间」徽标，顶栏高度约 207px -> 约 50px */
 .header.scrolled {
@@ -505,7 +525,8 @@ body.modal-open { overflow: hidden; }
   .stat .num { font-size:1.5rem; }
   .stat { padding:16px 10px; }
   .card { padding:14px; }
-  .header { padding:20px 0 16px; }
+  /* 窄屏下侧边栏移出视口，顶栏占满全宽；spacer 高度由 JS 按实际展开高度同步 */
+  .header { padding:20px 0 16px; left: 0; }
   .header h1 { font-size:1.5rem; }
   .container { padding:14px 12px 70px; }
   .user-search-wrap { max-width: 300px; }

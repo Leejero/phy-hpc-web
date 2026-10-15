@@ -89,6 +89,9 @@
 
 <!-- Main content -->
 <main class="main-wrap" id="mainWrap">
+  <!-- 顶栏占位块：顶栏用 fixed 脱离文档流后，由它占住原本的位置。
+       高度由 main.js 的 syncHeaderSpacer() 按顶栏展开高度同步（含 resize 重算）。 -->
+  <div class="header-spacer" aria-hidden="true"></div>
   <div class="header">
     <h1 id="clusterName">HPC 集群监控面板</h1>
     <p id="clusterSub">加载中...</p>

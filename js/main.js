@@ -99,6 +99,40 @@ function initSidebarNavClose() {
 // 回到顶部按钮
 // ============================================================
 
+// 顶栏收起/展开采用「迟滞阈值」：
+//   下滚超过 HEADER_DOWN 才收起，回滚低于 HEADER_UP 才展开。
+// 两者留出足够间隙，避免手指停在临界点附近时因 ±几 px 抖动来回切换。
+//（注意：光有迟滞不够，还必须让顶栏用 fixed 脱离文档流，见 css/style.css 说明）
+var HEADER_DOWN = 140;
+var HEADER_UP = 80;
+var _headerCollapsed = false;
+
+// 在「瞬时状态」下测量顶栏高度。
+// 直接加/删 .scrolled 后立刻读 offsetHeight 会拿到过渡动画的起点值
+//（实测把 55px 读成 185px），故统一走 .measuring —— 它连同后代一起禁用 transition。
+function dispatchMeasure(hd, mutate) {
+  hd.classList.add('measuring');
+  mutate();
+  var h = hd.offsetHeight;   // 强制同步布局，此时过渡已被禁用
+  hd.classList.remove('measuring');
+  return h;
+}
+
+// 顶栏为 fixed，脱离文档流后由 .header-spacer 顶住原位置。
+// 展开高度随断点字号与文案换行变化，需实测后写入占位块；
+// 占位高度固定 => 顶栏收起不改变文档总高度 => 不会出现「收起->文档变矮->
+// 滚动锚定补偿 scrollY->跌破阈值->展开」的自激振荡。
+function syncHeaderSpacer() {
+  var hd = document.querySelector('.header');
+  var sp = document.querySelector('.header-spacer');
+  if (!hd || !sp) return;
+  var had = hd.classList.contains('scrolled');
+  var natural = dispatchMeasure(hd, function () {
+    if (had) hd.classList.remove('scrolled');   // 量展开态自然高度
+  });
+  if (natural > 0) sp.style.height = natural + 'px';
+}
+
 var _backTopTimer = null;
 window.addEventListener('scroll', function () {
   if (_backTopTimer) return;
@@ -108,10 +142,13 @@ window.addEventListener('scroll', function () {
       if (window.scrollY > 300) btn.classList.add('show');
       else btn.classList.remove('show');
     }
-    // 顶栏滚动态：下滚超过 120px 后收起标题/副标题/搜索框并转为半透明
-    //（阈值不宜过小，否则轻微滚动就会触发收起/展开来回抖动）
+    // 顶栏滚动态：迟滞判定，模拟用户的"意图"而不是死盯单行像素阈值
     var hd = document.querySelector('.header');
-    if (hd) hd.classList.toggle('scrolled', window.scrollY > 120);
+    if (hd) {
+      if (!_headerCollapsed && window.scrollY > HEADER_DOWN) _headerCollapsed = true;
+      else if (_headerCollapsed && window.scrollY < HEADER_UP) _headerCollapsed = false;
+      hd.classList.toggle('scrolled', _headerCollapsed);
+    }
     _backTopTimer = null;
   });
 }, { passive: true });
@@ -122,12 +159,25 @@ window.addEventListener('scroll', function () {
 
 var _sidebarInited = false;
 
-// 顶部栏现为常驻吸顶（position:sticky），会覆盖正文顶部约一行高度。
+// 顶部栏现为常驻（position:fixed），会覆盖正文顶部约一行高度。
 // 侧栏锚点跳转与滚动高亮都必须避开它，否则标题会被压在栏下看不见。
 // 高度随断点字号变化，故每次实时读取而非缓存。
 function stickyHeaderH() {
   var h = document.querySelector('.header');
   return h ? h.offsetHeight : 0;
+}
+
+// 顶栏「收起后」的高度（仅剩更新时间徽标那一行的高度）。
+// 锚点要用它来算偏移：跳转的起点通常是展开态，但滚过去之后顶栏会收起，
+// 若按当前（展开）高度做偏移，标题会离顶栏多出 150px 左右的空白。
+// 这里用「加类-测量-还原」的方式实测，避免在 CSS 里硬编码高度。
+function collapsedHeaderH() {
+  var hd = document.querySelector('.header');
+  if (!hd) return 0;
+  var had = hd.classList.contains('scrolled');
+  return dispatchMeasure(hd, function () {
+    if (!had) hd.classList.add('scrolled');
+  });
 }
 
 function initSidebarScroll() {
@@ -167,7 +217,17 @@ function initSidebarScroll() {
       e.preventDefault();
       var el = document.getElementById(a.getAttribute('data-section'));
       // 减去吸顶栏高度，保证目标标题落在栏目下沿而非被遮住
-      if (el) window.scrollTo({ top: el.offsetTop - stickyHeaderH() - 12, behavior: 'smooth' });
+      if (el) {
+        var ch = collapsedHeaderH();
+        // 预估落点：若滚动后仍处于 HEADER_DOWN 以下，顶栏届时是收起态，按收起高度算偏移；
+        // 否则目标就在页面顶部附近，顶栏保持展开，按展开高度算。
+        var guessExpand = el.offsetTop - stickyHeaderH() - 12;
+        var willCollapse = (el.offsetTop - ch - 12) > HEADER_DOWN;
+        window.scrollTo({
+          top: willCollapse ? el.offsetTop - ch - 12 : guessExpand,
+          behavior: 'smooth'
+        });
+      }
     });
   });
 }
@@ -387,6 +447,8 @@ function render(d) {
   ].join('');
   initSidebarScroll();
   initSidebarNavClose();
+  // 副标题文案（Slurm 版本 · 运行时间）首次填充后可能换行改变顶栏高度，需重算占位
+  syncHeaderSpacer();
 }
 
 // ============================================================
@@ -779,6 +841,15 @@ initUserSearch();
 initAppModal();
 initAppNotice();
 startClock();
+// 顶栏脱离文档流后需同步占位块高度（首次渲染时副标题文案尚未填充，
+// 待数据回来后副标题换行可能导致高度变化，故此处与 render() 后各同步一次）
+syncHeaderSpacer();
+
+var _spacerResizeTimer = null;
+window.addEventListener('resize', function () {
+  if (_spacerResizeTimer) clearTimeout(_spacerResizeTimer);
+  _spacerResizeTimer = setTimeout(syncHeaderSpacer, 150);
+});
 
 document.addEventListener('visibilitychange', function () {
   // 先无条件清掉既有定时器，避免前后台快速切换时堆积多个轮询
