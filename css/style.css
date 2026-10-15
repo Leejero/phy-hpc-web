@@ -262,6 +262,45 @@ tr:hover td { background:rgba(79,110,247,.04); }
 .tag-alloc { background:rgba(79,110,247,.1); color:#1e40af; }
 .tag-online { background:rgba(34,197,94,.12); color:#166534; }
 .tag-qos { background:var(--primary-light); color:var(--primary); }
+/* 排队原因说明用的标签 */
+.tag-seen { background:rgba(79,110,247,.14); color:var(--primary); }
+.tag-live { background:rgba(245,158,11,.18); color:#854d0e; }
+.tag-auto { background:rgba(34,197,94,.14); color:#166534; }
+.tag-manual { background:rgba(239,68,68,.14); color:#991b1b; }
+.tag-cond { background:rgba(245,158,11,.16); color:#854d0e; }
+
+/* ===== 排队原因说明（嵌于 QOS 板块，见 renderPendingReasons） ===== */
+.reason-block { margin-top:var(--sp-5); padding-top:var(--sp-4); border-top:1px dashed var(--border); }
+.reason-block > .card-title:first-child { margin-top:0; }
+.reason-live { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.reason-live-chip {
+  display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;
+  padding:5px 11px; border-radius:var(--radius-pill); font-size:.78rem;
+  background:rgba(245,158,11,.12); color:#854d0e; border:1px solid rgba(245,158,11,.22);
+}
+.reason-live-chip .rw { color:var(--text2); font-weight:400; }
+.reason-live-chip.is-unknown { background:rgba(239,68,68,.1); color:#991b1b; border-color:rgba(239,68,68,.22); }
+.reason-live-empty { font-size:.85rem; color:var(--text2); }
+
+.reason-list { display:flex; flex-direction:column; gap:9px; }
+/* 左列放原因码，右列放说明；窄屏时改为上下堆叠，避免表格横向滚动 */
+.reason-item {
+  display:grid; grid-template-columns:minmax(0,215px) minmax(0,1fr);
+  gap:3px 16px; padding:11px 13px; border-radius:8px;
+  background:rgba(79,110,247,.035); border-left:3px solid rgba(79,110,247,.22);
+}
+.reason-item.seen { background:rgba(79,110,247,.07); border-left-color:rgba(79,110,247,.55); }
+.reason-item.is-live { border-left-color:#f59e0b; background:rgba(245,158,11,.07); }
+.reason-head { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.reason-code {
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:.79rem; font-weight:600; color:var(--primary); word-break:break-all;
+}
+.reason-name { font-size:.9rem; font-weight:600; color:var(--text); }
+.reason-name .tag { margin-left:8px; vertical-align:1px; }
+.reason-desc { font-size:.84rem; color:var(--text2); margin-top:4px; }
+.reason-meta { font-size:.78rem; color:var(--text2); margin-top:5px; }
+.reason-meta b { color:var(--text); font-weight:600; }
 
 /* ===== Alert ===== */
 .alert-item { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:.85rem; }
@@ -533,6 +572,9 @@ body.modal-open { overflow: hidden; }
 }
 
 @media(max-width:640px) {
+  /* 窄屏下原因码与说明改为上下堆叠，避免两列都过窄 */
+  .reason-item { grid-template-columns:1fr; gap:6px; }
+  .reason-item > .reason-head { padding-bottom:2px; }
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .header h1 { font-size:1.2rem; }
   .header p { font-size:.82rem; }

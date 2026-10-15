@@ -11,6 +11,9 @@ var refreshTimer = null;
 var lastData = null;
 var lastRaw = ''; // 上次数据原文，用于内容未变化时跳过重渲染
 var lastUpdatedStr = '--'; // 最近一次成功获取的数据时间，供刷新失败提示使用
+var lastUpdatedRaw = '';   // 同上，但保留原始字符串（形如 2026-10-15 10:40:04），
+                           // 供排队等待时长计算做基准；不可用浏览器本地时间，
+                           // 否则跨时区或本机时钟有偏差时会算错。
 var _dataWarn = false;     // 当前是否处于「刷新失败」状态
 var _clockTimer = null;    // 本地时钟定时器（每秒走动）
 
@@ -329,19 +332,210 @@ function renderDisks(d) {
   return h.join('');
 }
 
+// ============================================================
+// 排队原因说明
+// ------------------------------------------------------------
+// Slurm 官方 reason 码有 100+ 项，绝大多数涉及 Burst Buffer / GRES / License
+// 等本集群未启用的功能，全部搬运只会淹没真正有用的信息。
+// 故只收录两类：
+//   ① seen:true  —— 本集群历史数据（351 份快照）中实际出现过的 4 种
+//   ② seen:false —— 依本集群配置与常见用法判断的高概率原因 6 种
+// mode 表示排队能否自行解决：auto=会自动开始 / manual=必须自己改 /
+// cond=取决于前序作业成败
+// 阈值取自 data/slurm.json 的 constraints.partition_constraints，
+// 若管理员调整了 QOS，这里的文字需同步更新。
+// ============================================================
+
+var REASON_INFO = [
+  { code: 'AssocMaxJobsLimit', seen: true, mode: 'auto',
+    name: '账号并发作业数已达上限',
+    desc: '你的账号同时运行的作业数量达到上限。这是账号级限制，与选哪个分区无关。',
+    limit: '账号级 MaxJobs（非 QOS 项，需用 sacctmgr show assoc 查）',
+    act: '等自己的作业跑完即可；也可以把多个小算例合并成一个作业串行计算。' },
+
+  { code: 'QOSGrpCpuLimit', seen: true, mode: 'auto',
+    name: '该 QOS 全体用户合计核数已达上限',
+    desc: '同一 QOS 下所有人占用的核数加起来到了上限。这是「大家一起挤」的限制，与你个人用多少无关。',
+    limit: 'GrpTRES：student 384 核 / teacher 528 核 / test 144 核',
+    act: '纯排队，等别的用户释放。尽量避开白天高峰期提交。' },
+
+  { code: 'QOSMaxCpuPerUserLimit', seen: true, mode: 'auto',
+    name: '你个人占用的核数已达上限',
+    desc: '你自己在该 QOS 下占用的核数到了上限。与上一条的区别：这条只限你一个人。',
+    limit: 'MaxTRESPerUser：student 96 核 / teacher 144 核 / test 48 核',
+    act: '等自己的作业结束。提交前先算一下已占了多少核，避免一提交就排队。' },
+
+  { code: 'QOSMaxCpuPerJobLimit', seen: true, mode: 'manual',
+    name: '单个作业申请的核数超过上限',
+    desc: '一个作业申请的核数超过该 QOS 的每作业上限。注意 Slurm 不会自动帮你降规格，所以这个原因不会随时间自己消失。',
+    limit: 'MaxTRES：student / test 48 核，teacher 96 核',
+    act: '必须自己改：减少 MPI 进程数或核数申请，或改用 teacher 分区（上限 96 核）。' },
+
+  { code: 'AssocGrpCpuLimit', seen: false, mode: 'auto',
+    name: '账号组合计核数已达上限',
+    desc: '比 QOSGrpCpuLimit 更高一层：按「账号组」统计的总核数上限，通常是同一课题组所有人加总。',
+    limit: '账号组级限制',
+    act: '等组内其他人释放。若组内长期打满，说明该排队是结构性的，考虑错峰。' },
+
+  { code: 'MaxJobsPerAccount', seen: false, mode: 'auto',
+    name: '该账号在此 QOS 下的作业数超限',
+    desc: '单个账号在该 QOS 中同时提交或运行的作业数量超过限制，与 AssocMaxJobsLimit 类似但限定在某个 QOS 内。',
+    limit: 'QOS 的 MaxJobsPerAccount 项',
+    act: '减少同时提交的作业数量，用作业数组或串行脚本替代批量提交。' },
+
+  { code: 'QOSMaxMemPerUser', seen: false, mode: 'auto',
+    name: '你个人占用的内存已达上限',
+    desc: '单用户内存上限。轻微超限表现为排队，严重超限则作业可能被直接杀掉而不是继续等。',
+    limit: 'QOS 内存限制项（视具体 QOS 配置）',
+    act: '核实算例的内存估算是否合理，减小 --mem 申请，或减少并发作业数。' },
+
+  { code: 'Resources', seen: false, mode: 'auto',
+    name: '资源暂时凑不齐',
+    desc: '集群当前没有能满足你申请的空闲资源（CPU / 内存 / 节点数）。这是最通用的排队原因，表示确实在等机器。',
+    limit: '全集群 10 个节点 × 96 核 = 960 核，student / teacher / test 三个分区共用',
+    act: '适当缩小申请规模通常能更快排到（小作业更容易见缝插针）。三个分区共用同一批机器，换分区并不能变出资源。' },
+
+  { code: 'Priority', seen: false, mode: 'auto',
+    name: '有更高优先级的作业排在前面',
+    desc: '调度器按优先级排序，即使此刻有空闲资源，也会优先分给优先级更高的作业。',
+    limit: '取决于集群的优先级策略',
+    act: '安心等待。多数集群采用公平分享策略：近期用得越多，优先级会阶段性下调。' },
+
+  { code: 'Dependency', seen: false, mode: 'cond',
+    name: '依赖的前序作业还没完成',
+    desc: '用 --dependency=afterok:<jobid> 提交时，前序作业尚未正常结束，本作业被挂起。',
+    limit: '取决于你提交时指定的依赖条件',
+    act: '先看前序作业的状态。若前序作业失败或超时，依赖永远不会满足，需要重新提交本作业。' }
+];
+
+// 从 squeue 的 reason 字段里抽出原因码。
+// Slurm 原样输出的形态是 (AssocMaxJobsLimit)，少数情况会有多个或为空。
+function parseReasonCodes(raw) {
+  var out = [];
+  var re = /\(([^()]+)\)/g;
+  var m;
+  while ((m = re.exec(raw || '')) !== null) out.push(m[1]);
+  if (out.length === 0) {
+    var s = (raw || '').trim();
+    if (s && s !== 'N/A') out.push(s);
+  }
+  return out;
+}
+
+function findReasonInfo(code) {
+  for (var i = 0; i < REASON_INFO.length; i++) {
+    if (REASON_INFO[i].code === code) return REASON_INFO[i];
+  }
+  return null;
+}
+
+// 等待时长格式化
+function fmtWait(ms) {
+  var min = Math.floor(ms / 60000);
+  if (min < 1) return '不足 1 分钟';
+  if (min < 60) return min + ' 分钟';
+  var h = Math.floor(min / 60), mm = min % 60;
+  if (h < 24) return mm ? (h + ' 小时 ' + mm + ' 分') : (h + ' 小时');
+  var d = Math.floor(h / 24), hh = h % 24;
+  return hh ? (d + ' 天 ' + hh + ' 小时') : (d + ' 天');
+}
+
+// 用 last_updated 而非浏览器本地时间作为「现在」，避免时区或
+// 浏览器时钟偏差导致等待时长算错。last_updated 形如 2026-10-15 10:40:04。
+function dataNowMs() {
+  if (!lastUpdatedRaw) return null;
+  var t = Date.parse(lastUpdatedRaw.replace(' ', 'T'));
+  return isNaN(t) ? null : t;
+}
+
+function renderPendingReasons(d) {
+  var jobs = d.jobs || [];
+  var pending = jobs.filter(function (j) { return j.status === 'PENDING'; });
+  var h = [];
+
+  h.push('<div class="reason-block">');
+  h.push('<div class="card-title"><span class="dot"></span>排队时「原因」列是什么意思</div>');
+
+  // ---- ① 当前实况 ----
+  var now = dataNowMs();
+  var stat = [];
+  pending.forEach(function (j) {
+    parseReasonCodes(j.reason).forEach(function (code) {
+      var rec = null;
+      for (var i = 0; i < stat.length; i++) if (stat[i].code === code) rec = stat[i];
+      if (!rec) { rec = { code: code, count: 0, maxWait: 0 }; stat.push(rec); }
+      rec.count++;
+      var w = (now && j.submit_time) ? (now - Date.parse(String(j.submit_time).replace(' ', 'T'))) : NaN;
+      if (!isNaN(w) && w > rec.maxWait) rec.maxWait = w;
+    });
+  });
+  stat.sort(function (a, b) { return b.count - a.count; });
+
+  h.push('<div class="reason-live">');
+  if (stat.length === 0) {
+    h.push('<span class="reason-live-empty">当前没有作业在排队，以下原因供参考。</span>');
+  } else {
+    stat.forEach(function (s) {
+      h.push('<span class="reason-live-chip' + (findReasonInfo(s.code) ? '' : ' is-unknown') + '">'
+        + esc('(' + s.code + ')') + ' ×' + s.count
+        + (s.maxWait > 0 ? '<span class="rw">最长已等 ' + esc(fmtWait(s.maxWait)) + '</span>' : '')
+        + '</span>');
+    });
+  }
+  h.push('</div>');
+
+  // ---- ② 原因速查 ----
+  h.push('<div class="reason-list">');
+  REASON_INFO.forEach(function (r) {
+    var live = null;
+    for (var i = 0; i < stat.length; i++) if (stat[i].code === r.code) live = stat[i];
+    var cls = 'reason-item' + (r.seen ? ' seen' : '') + (live ? ' is-live' : '');
+    h.push('<div class="' + cls + '">');
+    h.push('<div class="reason-head"><span class="reason-code">' + esc('(' + r.code + ')') + '</span>'
+      + (r.seen ? '<span class="tag tag-seen">本集群常见</span>' : '')
+      + (live ? '<span class="tag tag-live">正在排队</span>' : '')
+      + '</div>');
+    h.push('<div>');
+    h.push('<div class="reason-name">' + esc(r.name)
+      + '<span class="tag ' + (r.mode === 'auto' ? 'tag-auto' : r.mode === 'manual' ? 'tag-manual' : 'tag-cond') + '">'
+      + (r.mode === 'auto' ? '会自动开始' : r.mode === 'manual' ? '须自己修改' : '视前序作业') + '</span></div>');
+    h.push('<div class="reason-desc">' + esc(r.desc) + '</div>');
+    h.push('<div class="reason-meta"><b>本集群阈值</b>：' + esc(r.limit) + '</div>');
+    h.push('<div class="reason-meta"><b>怎么办</b>：' + esc(r.act) + '</div>');
+    h.push('</div>');
+    h.push('</div>');
+  });
+  h.push('</div>');
+
+  h.push('<div class="sub-text sm">'
+    + '注 1：正在运行的作业「原因」列显示的是<strong>节点名</strong>（如 comput03），不是等待原因。<br>'
+    + '注 2：student / teacher / test 三个分区共用全部 10 台机器（960 核），'
+    + '某分区看似空闲也可能因集群整体占满而排队。<br>'
+    + '注 3：若遇到本表未列出的原因码，请把 squeue 的完整输出发给集群管理员。'
+    + '</div>');
+  h.push('</div>');
+  return h.join('');
+}
+
 function renderQos(d) {
   var con = d.constraints || {};
   var cp = con.partition_constraints || [];
   var h = [];
+  // 即使 QOS 约束表为空也要渲染板块 —— 排队原因说明不依赖 QOS 数据，
+  // 且它本身是有价值的常备内容。
+  if (cp.length === 0 && (d.jobs || []).length === 0) return '';
+  h.push('<div class="section-title" id="qos">' + ic('qos') + ' QOS 约束与排队原因</div>');
+  h.push('<div class="card">');
   if (cp.length > 0) {
-    h.push('<div class="section-title" id="qos">' + ic('qos') + ' QOS 约束条件</div>');
-    h.push('<div class="card"><div class="table-wrap"><table><thead><tr><th>分区</th><th>QOS</th><th>GrpTRES<br><small style="font-weight:400;color:var(--text2)">分区最大总资源</small></th><th>MaxTRES<br><small style="font-weight:400;color:var(--text2)">单任务最大资源</small></th><th>MaxTRESPerUser<br><small style="font-weight:400;color:var(--text2)">用户最大资源</small></th></tr></thead><tbody>');
+    h.push('<div class="card-title"><span class="dot"></span>各分区 QOS 阈值</div>');
+    h.push('<div class="table-wrap"><table><thead><tr><th>分区</th><th>QOS</th><th>GrpTRES<br><small style="font-weight:400;color:var(--text2)">分区最大总资源</small></th><th>MaxTRES<br><small style="font-weight:400;color:var(--text2)">单任务最大资源</small></th><th>MaxTRESPerUser<br><small style="font-weight:400;color:var(--text2)">用户最大资源</small></th></tr></thead><tbody>');
     cp.forEach(function (c) {
       h.push('<tr><td><strong>' + esc(c.partition) + '</strong></td><td><span class="tag tag-qos">' + esc(c.qos_name) + '</span></td><td>' + esc(c.GrpTRES) + '</td><td>' + esc(c.MaxTRES) + '</td><td>' + esc(c.MaxTRESPerUser) + '</td></tr>');
     });
     h.push('</tbody></table></div>');
-    h.push('</div>');
   }
+  h.push(renderPendingReasons(d));
+  h.push('</div>');
   return h.join('');
 }
 
@@ -503,12 +697,16 @@ function fetchData() {
     .then(function (raw) {
       var changed = raw !== lastRaw;
       var d = JSON.parse(raw);
+      // 这两个值必须在 render() 之前赋值：
+      // renderPendingReasons() 要用 lastUpdatedRaw 作基准算排队等待时长，
+      // 晚于 render 赋值会导致首屏等待时长全都不显示。
+      lastUpdatedStr = (d.overview && d.overview.last_updated) || '--';
+      lastUpdatedRaw = (d.overview && d.overview.last_updated) || '';
       if (changed) {
         lastRaw = raw;
         lastData = d;
         render(d); // 内容未变化时跳过重渲染，避免整页 DOM 重建
       }
-      lastUpdatedStr = (d.overview && d.overview.last_updated) || '--';
       _dataWarn = false;
       renderTimeBar();
     })
