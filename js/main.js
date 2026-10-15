@@ -359,23 +359,11 @@ var REASON_INFO = [
   { code: 'QOSMaxCpuPerJobLimit', seen: true, mode: 'manual',
     desc: '单作业申请核数超上限（48/96），须自行减少' },
 
-  { code: 'AssocGrpCpuLimit', seen: false, mode: 'auto',
-    desc: '账号组合计核数达上限（整个课题组）' },
-
-  { code: 'MaxJobsPerAccount', seen: false, mode: 'auto',
-    desc: '该账号在此 QOS 的作业数超限' },
-
-  { code: 'QOSMaxMemPerUser', seen: false, mode: 'auto',
-    desc: '你个人内存占用达上限（重则被杀）' },
-
   { code: 'Resources', seen: false, mode: 'auto',
     desc: '集群暂无满足申请的空闲资源（960 核共用）' },
 
   { code: 'Priority', seen: false, mode: 'auto',
-    desc: '有更高优先级的作业在前' },
-
-  { code: 'Dependency', seen: false, mode: 'cond',
-    desc: '--dependency 指定的前序作业未正常结束' }
+    desc: '有更高优先级的作业在前' }
 ];
 
 // 从 squeue 的 reason 字段里抽出原因码。
@@ -446,8 +434,10 @@ function renderPendingReasons(d) {
     h.push('<span class="reason-live-empty">当前没有作业在排队，以下原因供参考。</span>');
   } else {
     stat.forEach(function (s) {
-      h.push('<span class="reason-live-chip' + (findReasonInfo(s.code) ? '' : ' is-unknown') + '">'
+      var known = !!findReasonInfo(s.code);
+      h.push('<span class="reason-live-chip' + (known ? '' : ' is-unknown') + '">'
         + esc('(' + s.code + ')') + ' ×' + s.count
+        + (known ? '' : '<span class="rw">未收录</span>')
         + (s.maxWait > 0 ? '<span class="rw">最长已等 ' + esc(fmtWait(s.maxWait)) + '</span>' : '')
         + '</span>');
     });
@@ -461,15 +451,15 @@ function renderPendingReasons(d) {
   REASON_INFO.forEach(function (r) {
     var live = null;
     for (var i = 0; i < stat.length; i++) if (stat[i].code === r.code) live = stat[i];
-    h.push('<tr' + (live ? ' class="is-live"' : '') + '>');
+    h.push('<tr class="' + (r.mode === 'manual' ? 'is-manual' : '')
+      + (live ? ' is-live' : '') + '">');
     h.push('<td class="rc"><span class="reason-code">' + esc('(' + r.code + ')') + '</span>'
       + (r.seen ? '<span class="tag tag-seen">常见</span>' : '')
       + (live ? '<span class="tag tag-live">排队中</span>' : '')
       + '</td>');
     h.push('<td class="rd">' + esc(r.desc) + '</td>');
-    h.push('<td class="ra"><span class="tag '
-      + (r.mode === 'auto' ? 'tag-auto' : r.mode === 'manual' ? 'tag-manual' : 'tag-cond') + '">'
-      + (r.mode === 'auto' ? '会自动' : r.mode === 'manual' ? '须自己改' : '看前序')
+    h.push('<td class="ra"><span class="tag ' + (r.mode === 'auto' ? 'tag-auto' : 'tag-manual') + '">'
+      + (r.mode === 'auto' ? '会自动' : '须自己改')
       + '</span></td>');
     h.push('</tr>');
   });
@@ -477,7 +467,7 @@ function renderPendingReasons(d) {
 
   h.push('<div class="sub-text sm">'
     + '运行中作业该列显示的是<strong>节点名</strong>（如 comput03），非等待原因；'
-    + '其他原因码请发给管理员。'
+    + '未收录的原因码会标红显示。'
     + '</div>');
   h.push('</div>');
   return h.join('');
