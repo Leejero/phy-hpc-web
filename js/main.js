@@ -17,6 +17,23 @@ var lastUpdatedRaw = '';   // 同上，但保留原始字符串（形如 2026-10
 var _dataWarn = false;     // 当前是否处于「刷新失败」状态
 var _clockTimer = null;    // 本地时钟定时器（每秒走动）
 
+// —— 误报治理 ——
+// 页面每次「切回前台」都会立即补发一次请求，与 5 分钟轮询可能并发。
+// 早发的请求若晚返回（典型是被超时 abort），会把已经刷新成功的界面又改回
+// 「刷新失败」——这就是「明明刷新成功却显示失败」的根因。故引入请求序号，
+// 只采纳最新一次请求的结果，过期响应（无论成功或失败）一律丢弃。
+var _fetchSeq = 0;
+// 单次网络抖动、CDN 偶发回源慢都很常见，不该吓唬用户。连续 2 次失败
+// （跨一个轮询周期，约 5 分钟真取不到数据）才认为确实刷新失败。
+var _failStreak = 0;
+
+// —— 长时间掉线（与 App 端口径一致）——
+var serverOffline = false; // 数据超过 3 小时未更新 → 集群采集疑似停摆
+var dataAgeText = '';      // 数据年龄文案，形如「2 小时 30 分」
+var _collectedAtMs = 0;    // 数据采集时刻（毫秒），用于随时间推移实时推算年龄
+var _offlineShown = null;  // 已渲染的离线条幅文案（null = 未显示），
+                           // 用于避免每秒无谓地操作 DOM
+
 // ============================================================
 // 工具函数
 // ============================================================
@@ -709,7 +726,12 @@ function renderAnnouncement() {
 
 // 渲染入口：按分区拼装各区块（拆分自原 140 行巨型函数）
 function render(d) {
-  $('loader').style.display = 'none';
+  // #loader 只存在于 index.html 的初始骨架里，首次渲染时会被下面的
+  // innerHTML 整体替换掉。此后每次重渲染它都是 null —— 若不做判空，
+  // 这里会抛 TypeError 并被 fetchData 的 catch 捕获，把「数据已成功刷新」
+  // 误报成「刷新失败」（集群每出一次新数据就触发一次，即此误报之源）。
+  var ld = $('loader');
+  if (ld) ld.style.display = 'none';
   renderHeader(d);
   $('app').innerHTML = [
     renderAnnouncement(),
@@ -725,6 +747,9 @@ function render(d) {
   ].join('');
   initSidebarScroll();
   initSidebarNavClose();
+  // innerHTML 重建会连带清掉服务端离线条幅，重置标记后再同步一次即可插回原位
+  _offlineShown = null;
+  syncOfflineBanner();
   // 副标题文案（Slurm 版本 · 运行时间）首次填充后可能换行改变顶栏高度，需重算占位
   syncHeaderSpacer();
 }
@@ -739,7 +764,19 @@ function render(d) {
 function renderTimeBar() {
   var ub = $('updateTime');
   if (!ub) return;
+
+  // 数据年龄每秒重算：集群停摆时不必等下一次请求，年龄会自己往上涨
+  refreshServerOffline();
+  syncOfflineBanner();
+
   var clock = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  // 三档优先级：采集停摆（数据旧）> 刷新失败（请求取不到）> 正常
+  if (serverOffline) {
+    ub.textContent = '⚠ 数据已 ' + dataAgeText + ' 未更新 · 本地时间：' + clock;
+    ub.classList.add('badge-warn');
+    return;
+  }
   ub.textContent = (_dataWarn ? '⚠ 刷新失败 · 上次成功: ' + lastUpdatedStr
                               : '最后更新: ' + lastUpdatedStr)
     + ' · 本地时间：' + clock;
@@ -760,12 +797,68 @@ function stopClock() {
 // 数据获取（多源容错）
 // ============================================================
 
+// 解析集群时间戳。数据里是「本地时间」写法（无时区），
+// timestamp.collected_at 形如 2026-10-15T15:00:04.664360（小数秒有 6 位，
+// 直接交给 new Date() 在部分浏览器上会解析失败），故手工取到秒。
+function parseStamp(s) {
+  if (!s) return NaN;
+  var m = String(s).match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+  if (!m) return NaN;
+  return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime();
+}
+
+// 依据数据年龄推算「采集是否停摆」。每秒随时钟重算，因此数据不更新时
+// 年龄会自己往上涨，不必等下一次请求。
+// 阈值取 3 小时：集群端日间约 20 分钟采集一次、夜间约 2 小时一次，
+// 超过 3 小时仍无新数据即可判定异常（与 App 端保持一致）。
+function refreshServerOffline() {
+  if (!_collectedAtMs) { serverOffline = false; dataAgeText = ''; return; }
+  var ageMs = Date.now() - _collectedAtMs;
+  if (ageMs > 3 * 3600 * 1000) {
+    serverOffline = true;
+    var hh = Math.floor(ageMs / 3600000);
+    var mm = Math.floor((ageMs % 3600000) / 60000);
+    dataAgeText = hh + ' 小时' + (mm ? ' ' + mm + ' 分' : '');
+  } else {
+    serverOffline = false;
+    dataAgeText = '';
+  }
+}
+
+// 离线横幅：状态或文案发生变化时才动 DOM（本函数每秒被调用一次）。
+// 横幅插在 #app 最前，随 render() 重建后由 _offlineShown 重置重新插入。
+function syncOfflineBanner() {
+  var app = $('app');
+  if (!app) return;
+  var text = serverOffline
+    ? '⚠ 服务器离线：数据已 ' + dataAgeText + ' 未更新，集群采集可能已停止，请检查集群侧采集服务。'
+    : null;
+  if (text === _offlineShown) return;
+  _offlineShown = text;
+
+  var el = document.getElementById('offlineBanner');
+  if (text === null) {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    return;
+  }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'offlineBanner';
+    el.className = 'offline-banner';
+    app.insertBefore(el, app.firstChild);
+  }
+  el.textContent = text;
+}
+
 function fetchData() {
+  var seq = ++_fetchSeq; // 本次请求的序号，回调里据此判断是否已被更新的请求取代
   var ctrl = null;
   var tid = null;
   if (typeof AbortController !== 'undefined') {
     ctrl = new AbortController();
-    tid = setTimeout(function () { ctrl.abort(); }, 10000);
+    // 15 秒：cache:'no-cache' 会强制向 CDN 验证、偶尔回源较慢，
+    // 原先的 10 秒偏紧，容易把「只是慢」误判成「失败」
+    tid = setTimeout(function () { ctrl.abort(); }, 15000);
   }
 
   // cache:'no-cache' 强制向服务器发条件请求（可命中 304），替代 ?t= 时间戳（后者完全绕过缓存）
@@ -779,30 +872,48 @@ function fetchData() {
       return r.text();
     })
     .then(function (raw) {
+      // 过期响应直接丢弃（见 _fetchSeq 注释），否则会把新界面改回旧状态
+      if (seq !== _fetchSeq) return;
       var changed = raw !== lastRaw;
       var d = JSON.parse(raw);
-      // 这两个值必须在 render() 之前赋值：
+      // 这几个值必须在 render() 之前赋值：
       // renderPendingReasons() 要用 lastUpdatedRaw 作基准算排队等待时长，
       // 晚于 render 赋值会导致首屏等待时长全都不显示。
       lastUpdatedStr = (d.overview && d.overview.last_updated) || '--';
       lastUpdatedRaw = (d.overview && d.overview.last_updated) || '';
+      _collectedAtMs = parseStamp((d.timestamp && d.timestamp.collected_at) || lastUpdatedRaw);
+      refreshServerOffline(); // 先算好离线状态，render() 里同步横幅才准确
       if (changed) {
         lastRaw = raw;
         lastData = d;
-        render(d); // 内容未变化时跳过重渲染，避免整页 DOM 重建
+        // 渲染异常必须与网络异常分开：否则 render 里任何一处报错都会
+        // 落到下面的 catch，把成功取回的数据误标成「刷新失败」。
+        try {
+          render(d); // 内容未变化时跳过重渲染，避免整页 DOM 重建
+        } catch (err) {
+          console.error('页面渲染失败:', err);
+        }
       }
+      _failStreak = 0;
       _dataWarn = false;
       renderTimeBar();
     })
     .catch(function (e) {
       if (tid) clearTimeout(tid);
       console.warn('数据加载失败:' + e.message);
+      if (seq !== _fetchSeq) return; // 过期的失败同样丢弃，正是误报之源
       if (!lastData) {
-        $('loader').innerHTML = '<div style="color:var(--danger)">❌ 数据加载失败<br><small>' + esc(e.message) + '</small></div>';
+        // 首屏失败：优先写在加载占位块上；该块若已被渲染替换掉，则退回内容容器
+        var host = $('loader') || $('app');
+        if (host) host.innerHTML = '<div style="color:var(--danger)">❌ 数据加载失败<br><small>' + esc(e.message) + '</small></div>';
       } else {
-        // 已有旧数据：不再静默，给出明确的刷新失败提示，避免用户看到陈旧数据而无感知
-        _dataWarn = true;
-        renderTimeBar();
+        // 已有旧数据时：单次失败静默（网络抖动很常见），连续两次才提示，
+        // 避免「明明数据是新的却显示刷新失败」这种自相矛盾的观感
+        _failStreak++;
+        if (_failStreak >= 2) {
+          _dataWarn = true;
+          renderTimeBar();
+        }
       }
     });
 }

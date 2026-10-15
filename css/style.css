@@ -58,6 +58,22 @@ body {
 .empty-state { text-align:center; color:var(--text2); padding:20px; }
 .badge-warn { background:rgba(239,68,68,.12) !important; color:var(--danger) !important; }
 
+/* 服务器离线条幅：数据长时间未更新时插在内容最前，
+   由 main.js 的 syncOfflineBanner() 维护（状态未变则不重建 DOM） */
+.offline-banner {
+  margin: var(--sp-2) 0 0;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  background: rgba(239,68,68,.09);
+  border: 1px solid rgba(239,68,68,.28);
+  color: #991b1b;          /* 与 .rg-mode.manual 同一深红，浅底上对比度更足 */
+  font-size: .86rem; line-height: 1.6; text-align: center;
+  animation: offline-in .3s ease;
+}
+@keyframes offline-in { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+/* 横幅插到最前后，「首个标题上边距归零」的 :first-child 规则失效，单独收紧一次 */
+.container > .offline-banner + .section-title { margin-top: 14px; }
+
 /* ===== Sidebar ===== */
 .sidebar {
   position: fixed; left:0; top:0; bottom:0; width:var(--sidebar-w);
