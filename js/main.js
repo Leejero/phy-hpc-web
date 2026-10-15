@@ -387,6 +387,62 @@ function findReasonInfo(code) {
   return null;
 }
 
+// 从「排队原因」板块跳到任务列表：滚动到第一条因该原因等待的作业，并高亮全部命中行。
+// 原因码由 parseReasonCodes 解析，与实况统计口径一致（一个作业的 reason 可能是复合串）。
+var _rowHitTimer = null;
+function jumpToPendingTasks(code) {
+  var table = document.getElementById('jobTable');
+  if (!table || !code) return false;
+  var rows = [].slice.call(table.querySelectorAll('tbody tr[data-status="PENDING"]'));
+  var hits = rows.filter(function (tr) {
+    return parseReasonCodes(tr.getAttribute('data-reason')).indexOf(code) >= 0;
+  });
+  if (hits.length === 0) {
+    // 任务超过 50 条时表格尾部会被截断，命中行可能不在其中 —— 退化为跳到任务列表标题
+    var sect = document.getElementById('jobs');
+    if (sect) {
+      var ch0 = collapsedHeaderH();
+      var guess0 = sect.offsetTop - stickyHeaderH() - 12;
+      var will0 = (sect.offsetTop - ch0 - 12) > HEADER_DOWN;
+      window.scrollTo({ top: Math.max(0, will0 ? sect.offsetTop - ch0 - 12 : guess0), behavior: 'smooth' });
+    }
+    return false;
+  }
+
+  // 落点偏移：滚动后仍处于 HEADER_DOWN 以下则顶栏是收起态（同侧栏锚点算法），
+  // 再减去表头高度，避免目标行被「顶栏 + 表头」双重遮挡。
+  var thead = table.tHead ? table.tHead.offsetHeight : 0;
+  var ch = collapsedHeaderH();
+  var targetDocTop = hits[0].getBoundingClientRect().top + window.scrollY;
+  var willCollapse = (targetDocTop - ch - thead - 12) > HEADER_DOWN;
+  var top = targetDocTop - (willCollapse ? ch : stickyHeaderH()) - thead - 12;
+  window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+
+  // 高亮：先清掉上一轮，再给本轮命中行打标；2.4 秒后自动褪去
+  [].slice.call(table.querySelectorAll('tr.row-hit')).forEach(function (tr) { tr.classList.remove('row-hit'); });
+  hits.forEach(function (tr) { tr.classList.add('row-hit'); });
+  if (_rowHitTimer) clearTimeout(_rowHitTimer);
+  _rowHitTimer = setTimeout(function () {
+    hits.forEach(function (tr) { tr.classList.remove('row-hit'); });
+    _rowHitTimer = null;
+  }, 2400);
+  return true;
+}
+
+// 「排队原因」板块的点击委托（只绑一次；板块随 render 重建，故不能用直接绑定）
+var _reasonJumpInited = false;
+function initReasonJump() {
+  if (_reasonJumpInited) return;
+  _reasonJumpInited = true;
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var el = t && t.closest ? t.closest('[data-jump-reason]') : null;
+    if (!el) return;
+    e.preventDefault();
+    jumpToPendingTasks(el.getAttribute('data-jump-reason'));
+  });
+}
+
 // 等待时长格式化
 function fmtWait(ms) {
   var min = Math.floor(ms / 60000);
@@ -435,7 +491,9 @@ function renderPendingReasons(d) {
   } else {
     stat.forEach(function (s) {
       var known = !!findReasonInfo(s.code);
-      h.push('<span class="reason-live-chip' + (known ? '' : ' is-unknown') + '">'
+      // 每个实况标签都可点击：直接跳到任务列表里因此原因等待的作业
+      h.push('<span class="reason-live-chip is-jump' + (known ? '' : ' is-unknown') + '"'
+        + ' data-jump-reason="' + esc(s.code) + '" title="点击定位到任务列表中等待的作业">'
         + esc('(' + s.code + ')') + ' ×' + s.count
         + (known ? '' : '<span class="rw">未收录</span>')
         + (s.maxWait > 0 ? '<span class="rw">最长已等 ' + esc(fmtWait(s.maxWait)) + '</span>' : '')
@@ -451,11 +509,16 @@ function renderPendingReasons(d) {
   REASON_INFO.forEach(function (r) {
     var live = null;
     for (var i = 0; i < stat.length; i++) if (stat[i].code === r.code) live = stat[i];
-    h.push('<tr class="' + (r.mode === 'manual' ? 'is-manual' : '')
-      + (live ? ' is-live' : '') + '">');
+    // 正在排队的条目整行可点击，点击后定位到任务列表里对应的等待作业。
+    // 属性分开拼：class 值走变量、额外属性走 trAttr，避免手写引号时漏掉闭合引号
+    //（曾写成 '<tr class="' + ... + '>'，class 值未闭合，浏览器把随后的
+    //  '><td class="rc">' 整个吞进 class 属性里，导致原因码单元格消失）
+    var trCls = (r.mode === 'manual' ? 'is-manual ' : '') + (live ? 'is-live is-jump' : '');
+    var trAttr = live ? ' data-jump-reason="' + esc(r.code) + '" title="点击定位到任务列表中等待的作业"' : '';
+    h.push('<tr class="' + trCls + '"' + trAttr + '>');
     h.push('<td class="rc"><span class="reason-code">' + esc('(' + r.code + ')') + '</span>'
       + (r.seen ? '<span class="tag tag-seen">常见</span>' : '')
-      + (live ? '<span class="tag tag-live">排队中</span>' : '')
+      + (live ? '<span class="tag tag-live">排队中 ↓</span>' : '')
       + '</td>');
     h.push('<td class="rd">' + esc(r.desc) + '</td>');
     h.push('<td class="ra"><span class="tag ' + (r.mode === 'auto' ? 'tag-auto' : 'tag-manual') + '">'
@@ -466,7 +529,7 @@ function renderPendingReasons(d) {
   h.push('</tbody></table></div>');
 
   h.push('<div class="sub-text sm">'
-    + '运行中作业该列显示的是<strong>节点名</strong>（如 comput03），非等待原因；'
+    + '运行中作业该列显示的是<strong>节点名</strong>，非等待原因；'
     + '未收录的原因码会标红显示。'
     + '</div>');
   h.push('</div>');
@@ -521,9 +584,10 @@ function renderJobs(d) {
   var pendJobs = jlist.filter(function (j) { return j.status === 'PENDING'; });
   if (jlist.length > 0) {
     h.push('<div class="section-title" id="jobs">' + ic('jobs') + ' 任务列表 <small style="color:var(--text2);font-weight:400">(' + runJobs.length + ' 运行, ' + pendJobs.length + ' 等待)</small></div>');
-    h.push('<div class="card"><div class="table-wrap"><table><thead><tr><th>Job ID</th><th>名称</th><th>状态</th><th>分区</th><th>用户</th><th>CPU</th><th>运行时间</th><th>时限</th><th>原因</th></tr></thead><tbody>');
+    h.push('<div class="card"><div class="table-wrap"><table id="jobTable"><thead><tr><th>Job ID</th><th>名称</th><th>状态</th><th>分区</th><th>用户</th><th>CPU</th><th>运行时间</th><th>时限</th><th>原因</th></tr></thead><tbody>');
     jlist.slice(0, 50).forEach(function (j) {
-      h.push('<tr><td>' + esc(j.job_id) + '</td><td>' + esc(j.name) + '</td><td>' + tagState(j.status) + '</td><td>' + esc(j.partition) + '</td><td>' + esc(j.user) + '</td><td>' + (j.cpus || 0) + '</td><td>' + esc(j.runtime) + '</td><td>' + esc(j.time_limit) + '</td><td class="cell-ellipsis" title="' + esc(j.reason) + '">' + esc(j.reason) + '</td></tr>');
+      // data-reason 供「排队原因」板块点击跳转时定位；运行中作业该字段是节点名，不参与匹配
+      h.push('<tr data-status="' + esc(j.status) + '" data-reason="' + esc(j.reason) + '"><td>' + esc(j.job_id) + '</td><td>' + esc(j.name) + '</td><td>' + tagState(j.status) + '</td><td>' + esc(j.partition) + '</td><td>' + esc(j.user) + '</td><td>' + (j.cpus || 0) + '</td><td>' + esc(j.runtime) + '</td><td>' + esc(j.time_limit) + '</td><td class="cell-ellipsis" title="' + esc(j.reason) + '">' + esc(j.reason) + '</td></tr>');
     });
     if (jlist.length > 50) h.push('<tr><td colspan="9" style="text-align:center;color:var(--text2)">... 仅显示前 50 条，共 ' + jlist.length + ' 条</td></tr>');
     h.push('</tbody></table></div></div>');
@@ -994,6 +1058,7 @@ refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
 initUserSearch();
 initAppModal();
 initAppNotice();
+initReasonJump();
 startClock();
 // 顶栏脱离文档流后需同步占位块高度（首次渲染时副标题文案尚未填充，
 // 待数据回来后副标题换行可能导致高度变化，故此处与 render() 后各同步一次）

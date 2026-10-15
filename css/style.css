@@ -279,16 +279,19 @@ tr:hover td { background:rgba(79,110,247,.04); }
 }
 .reason-live-chip .rw { color:var(--text2); font-weight:400; }
 .reason-live-chip.is-unknown { background:rgba(239,68,68,.1); color:#991b1b; border-color:rgba(239,68,68,.22); }
+/* 实况标签可点击：跳到任务列表里因该原因等待的作业 */
+.reason-live-chip.is-jump { cursor:pointer; transition:background .2s ease, border-color .2s ease; }
+.reason-live-chip.is-jump:hover { background:rgba(245,158,11,.24); border-color:rgba(245,158,11,.45); }
+.reason-live-chip.is-jump.is-unknown:hover { background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.45); }
 .reason-live-empty { font-size:.85rem; color:var(--text2); }
 
 /* 原因速查表：一行一条，比卡片列表省一半以上高度。
    不用 table-layout:fixed —— 列宽交给浏览器按内容分配，中等宽度下不会把
    原因码列挤到折行。 */
 .reason-table { font-size:.83rem; }
-/* 全站 th 默认居中，这里改为与列内容对齐：前两列左对齐、状态列居中 */
-.reason-table th { padding:7px 10px; text-align:left; }
-.reason-table th:last-child { text-align:center; }
-.reason-table td { padding:7px 10px; text-align:left; vertical-align:middle; }
+/* 三列（表头与内容）统一居中 */
+.reason-table th { padding:7px 10px; text-align:center; }
+.reason-table td { padding:7px 10px; text-align:center; vertical-align:middle; }
 /* width:1px + nowrap 是让表格列「收缩到内容宽度」的写法：
    这样左右两列固定为内容宽度，多余空间全部由「含义」列吸收，
    否则 auto 布局会把宽屏多余空间按内容比例摊给原因码列（曾撑到六成） */
@@ -303,6 +306,17 @@ tr:hover td { background:rgba(79,110,247,.04); }
 .reason-table tr.is-live td { background:rgba(245,158,11,.06); }
 /* 唯一需要用户动手的一类（Slurm 不会自动降规格），左侧加红条以示区别 */
 .reason-table tr.is-manual td.rc { box-shadow:inset 3px 0 0 rgba(239,68,68,.55); }
+/* 正在排队的条目整行可点击 → 跳转到任务列表中对应的等待作业 */
+.reason-table tr.is-jump { cursor:pointer; }
+.reason-table tr.is-jump:hover td { background:rgba(79,110,247,.08); }
+.reason-table tr.is-jump:active td { background:rgba(79,110,247,.16); }
+.reason-table tr.is-jump.is-manual:hover td { background:rgba(239,68,68,.07); }
+/* 板块内的说明文字同样居中，与整表对齐 */
+.reason-block > .sub-text.sm { text-align:center; }
+
+/* 从「排队原因」跳转命中时的任务高亮：在长表里一眼找到是哪几条作业在等 */
+#jobTable tbody tr.row-hit td { background:rgba(79,110,247,.16); transition:background-color .6s ease; }
+#jobTable tbody tr.row-hit td:first-child { box-shadow:inset 3px 0 0 var(--primary); }
 
 /* ===== Alert ===== */
 .alert-item { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:.85rem; }
@@ -586,9 +600,9 @@ body.modal-open { overflow: hidden; }
   /* tr 转 grid 后原表格布局失效，td 需重置为块级。
      注意 .reason-table td.rc 等选择器特异性高于 .reason-table td，
      宽度重置必须写在同特异性的规则里，否则 width:1px 会继续生效（曾把列压成 1px） */
-  .reason-table td { display:block; padding:0; border:0; text-align:left; }
+  .reason-table td { display:block; padding:0; border:0; text-align:center; }
   .reason-table td.rc { grid-column:1; grid-row:1; width:auto; }
-  .reason-table td.ra { grid-column:2; grid-row:1; width:auto; text-align:right; white-space:nowrap; }
+  .reason-table td.ra { grid-column:2; grid-row:1; width:auto; text-align:center; white-space:nowrap; }
   .reason-table td.rd { grid-column:1 / -1; grid-row:2; width:auto; }
   .reason-table td.rc .tag { display:inline-block; margin:0 0 0 6px; }
   .reason-table tr:hover td { background:transparent; }
