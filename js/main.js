@@ -108,9 +108,10 @@ window.addEventListener('scroll', function () {
       if (window.scrollY > 300) btn.classList.add('show');
       else btn.classList.remove('show');
     }
-    // 顶栏滚动态：离开页面顶部后转为更通透的半透明（样式见 .header.scrolled）
+    // 顶栏滚动态：下滚超过 120px 后收起标题/副标题/搜索框并转为半透明
+    //（阈值不宜过小，否则轻微滚动就会触发收起/展开来回抖动）
     var hd = document.querySelector('.header');
-    if (hd) hd.classList.toggle('scrolled', window.scrollY > 24);
+    if (hd) hd.classList.toggle('scrolled', window.scrollY > 120);
     _backTopTimer = null;
   });
 }, { passive: true });

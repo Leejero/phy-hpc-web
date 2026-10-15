@@ -155,15 +155,29 @@ body {
   /* 全局常驻：随页面滚动固定在视口顶部，不再滚走。
      z-index 150 —— 低于侧边栏(200)与侧栏开关(180)，高于正文内容 */
   position: sticky; top: 0; z-index: 150;
-  /* 背景透明度随滚动状态平滑过渡（见下方 .scrolled） */
-  transition: background .28s ease, border-color .28s ease, box-shadow .28s ease;
+  /* 背景透明度与高度随滚动状态平滑过渡（见下方 .scrolled） */
+  transition: background .28s ease, border-color .28s ease, box-shadow .28s ease, padding .3s ease;
 }
-/* 向下滚动后转为更通透的半透明，降低对正文的压迫感。
-   仅调透明度与阴影、不改高度——高度变化会引起正文回流跳动 */
+/* 向下滚动后转为更通透的半透明，并收起标题/副标题/搜索框，
+   只保留「更新时间」徽标，顶栏高度约 207px -> 约 50px */
 .header.scrolled {
   background: rgba(255,255,255,.32);
   border-bottom-color: rgba(79,110,247,.06);
   box-shadow: 0 2px 18px rgba(30,41,59,.08);
+  padding: 10px 0;
+}
+/* 参与收起的元素：主标题 / 副标题 / 搜索框。
+   用 max-height 而非 display 切换，保证收起/展开均可平滑动画；
+   visibility 参与过渡可让元素在收起动画结束后才真正不可交互 */
+.header h1, .header p, .user-search-wrap {
+  max-height: 150px; overflow: hidden; visibility: visible;
+  transition: max-height .3s ease, opacity .2s ease, margin-top .3s ease, visibility .3s ease;
+}
+.header.scrolled h1,
+.header.scrolled p,
+.header.scrolled .user-search-wrap {
+  max-height: 0; margin-top: 0; opacity: 0;
+  visibility: hidden; pointer-events: none;
 }
 .header h1 { font-size:1.8rem; font-weight:700; letter-spacing:.5px; background:linear-gradient(135deg, #4f6ef7, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .header p { color:var(--text2); margin-top:6px; font-size:.95rem; }
