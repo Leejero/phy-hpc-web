@@ -348,64 +348,44 @@ function renderDisks(d) {
 
 var REASON_INFO = [
   { code: 'AssocMaxJobsLimit', seen: true, mode: 'auto',
-    name: '账号并发作业数已达上限',
-    desc: '你的账号同时运行的作业数量达到上限。这是账号级限制，与选哪个分区无关。',
-    limit: '账号级 MaxJobs（非 QOS 项，需用 sacctmgr show assoc 查）',
-    act: '等自己的作业跑完即可；也可以把多个小算例合并成一个作业串行计算。' },
+    desc: '账号同时运行的作业数达上限（账号级 MaxJobs）',
+    act: '等自己的作业跑完，或把多个小算例合并成一个作业' },
 
   { code: 'QOSGrpCpuLimit', seen: true, mode: 'auto',
-    name: '该 QOS 全体用户合计核数已达上限',
-    desc: '同一 QOS 下所有人占用的核数加起来到了上限。这是「大家一起挤」的限制，与你个人用多少无关。',
-    limit: 'GrpTRES：student 384 核 / teacher 528 核 / test 144 核',
-    act: '纯排队，等别的用户释放。尽量避开白天高峰期提交。' },
+    desc: '该 QOS 全体用户合计占用的核数达上限（384 / 528 / 144 核）',
+    act: '等别人释放，尽量避开白天高峰' },
 
   { code: 'QOSMaxCpuPerUserLimit', seen: true, mode: 'auto',
-    name: '你个人占用的核数已达上限',
-    desc: '你自己在该 QOS 下占用的核数到了上限。与上一条的区别：这条只限你一个人。',
-    limit: 'MaxTRESPerUser：student 96 核 / teacher 144 核 / test 48 核',
-    act: '等自己的作业结束。提交前先算一下已占了多少核，避免一提交就排队。' },
+    desc: '你个人在该 QOS 下占用的核数达上限（96 / 144 / 48 核）',
+    act: '等自己的作业结束；提交前先算已占多少核' },
 
   { code: 'QOSMaxCpuPerJobLimit', seen: true, mode: 'manual',
-    name: '单个作业申请的核数超过上限',
-    desc: '一个作业申请的核数超过该 QOS 的每作业上限。注意 Slurm 不会自动帮你降规格，所以这个原因不会随时间自己消失。',
-    limit: 'MaxTRES：student / test 48 核，teacher 96 核',
-    act: '必须自己改：减少 MPI 进程数或核数申请，或改用 teacher 分区（上限 96 核）。' },
+    desc: '单个作业申请的核数超过上限（48 / 96 核）',
+    act: 'Slurm 不会自动降规格，必须自己减少核数申请' },
 
   { code: 'AssocGrpCpuLimit', seen: false, mode: 'auto',
-    name: '账号组合计核数已达上限',
-    desc: '比 QOSGrpCpuLimit 更高一层：按「账号组」统计的总核数上限，通常是同一课题组所有人加总。',
-    limit: '账号组级限制',
-    act: '等组内其他人释放。若组内长期打满，说明该排队是结构性的，考虑错峰。' },
+    desc: '账号组合计核数达上限，通常是整个课题组加总',
+    act: '等组内释放；长期打满说明是结构性排队，需错峰' },
 
   { code: 'MaxJobsPerAccount', seen: false, mode: 'auto',
-    name: '该账号在此 QOS 下的作业数超限',
-    desc: '单个账号在该 QOS 中同时提交或运行的作业数量超过限制，与 AssocMaxJobsLimit 类似但限定在某个 QOS 内。',
-    limit: 'QOS 的 MaxJobsPerAccount 项',
-    act: '减少同时提交的作业数量，用作业数组或串行脚本替代批量提交。' },
+    desc: '该账号在此 QOS 下提交或运行的作业数超限',
+    act: '减少同时提交数，改用作业数组或串行脚本' },
 
   { code: 'QOSMaxMemPerUser', seen: false, mode: 'auto',
-    name: '你个人占用的内存已达上限',
-    desc: '单用户内存上限。轻微超限表现为排队，严重超限则作业可能被直接杀掉而不是继续等。',
-    limit: 'QOS 内存限制项（视具体 QOS 配置）',
-    act: '核实算例的内存估算是否合理，减小 --mem 申请，或减少并发作业数。' },
+    desc: '你个人的内存占用达上限',
+    act: '轻则排队、重则作业被杀；核实 --mem 是否申请过大' },
 
   { code: 'Resources', seen: false, mode: 'auto',
-    name: '资源暂时凑不齐',
-    desc: '集群当前没有能满足你申请的空闲资源（CPU / 内存 / 节点数）。这是最通用的排队原因，表示确实在等机器。',
-    limit: '全集群 10 个节点 × 96 核 = 960 核，student / teacher / test 三个分区共用',
-    act: '适当缩小申请规模通常能更快排到（小作业更容易见缝插针）。三个分区共用同一批机器，换分区并不能变出资源。' },
+    desc: '集群暂时凑不齐你申请的资源（全集群 960 核，三分区共用）',
+    act: '缩小申请规模通常排得更快，换分区不会变出机器' },
 
   { code: 'Priority', seen: false, mode: 'auto',
-    name: '有更高优先级的作业排在前面',
-    desc: '调度器按优先级排序，即使此刻有空闲资源，也会优先分给优先级更高的作业。',
-    limit: '取决于集群的优先级策略',
-    act: '安心等待。多数集群采用公平分享策略：近期用得越多，优先级会阶段性下调。' },
+    desc: '有更高优先级的作业排在前面',
+    act: '安心等待，公平分享策略会自动调节优先级' },
 
   { code: 'Dependency', seen: false, mode: 'cond',
-    name: '依赖的前序作业还没完成',
-    desc: '用 --dependency=afterok:<jobid> 提交时，前序作业尚未正常结束，本作业被挂起。',
-    limit: '取决于你提交时指定的依赖条件',
-    act: '先看前序作业的状态。若前序作业失败或超时，依赖永远不会满足，需要重新提交本作业。' }
+    desc: '--dependency 指定的前序作业尚未正常结束',
+    act: '前序失败则依赖永不满足，需重新提交本作业' }
 ];
 
 // 从 squeue 的 reason 字段里抽出原因码。
@@ -484,34 +464,31 @@ function renderPendingReasons(d) {
   }
   h.push('</div>');
 
-  // ---- ② 原因速查 ----
-  h.push('<div class="reason-list">');
+  // ---- ② 原因速查（紧凑表格：一行一条，避免占满整屏） ----
+  h.push('<div class="table-wrap"><table class="reason-table"><thead><tr>'
+    + '<th>原因码</th><th>含义与应对</th><th>能否自动开始</th>'
+    + '</tr></thead><tbody>');
   REASON_INFO.forEach(function (r) {
     var live = null;
     for (var i = 0; i < stat.length; i++) if (stat[i].code === r.code) live = stat[i];
-    var cls = 'reason-item' + (r.seen ? ' seen' : '') + (live ? ' is-live' : '');
-    h.push('<div class="' + cls + '">');
-    h.push('<div class="reason-head"><span class="reason-code">' + esc('(' + r.code + ')') + '</span>'
-      + (r.seen ? '<span class="tag tag-seen">本集群常见</span>' : '')
-      + (live ? '<span class="tag tag-live">正在排队</span>' : '')
-      + '</div>');
-    h.push('<div>');
-    h.push('<div class="reason-name">' + esc(r.name)
-      + '<span class="tag ' + (r.mode === 'auto' ? 'tag-auto' : r.mode === 'manual' ? 'tag-manual' : 'tag-cond') + '">'
-      + (r.mode === 'auto' ? '会自动开始' : r.mode === 'manual' ? '须自己修改' : '视前序作业') + '</span></div>');
-    h.push('<div class="reason-desc">' + esc(r.desc) + '</div>');
-    h.push('<div class="reason-meta"><b>本集群阈值</b>：' + esc(r.limit) + '</div>');
-    h.push('<div class="reason-meta"><b>怎么办</b>：' + esc(r.act) + '</div>');
-    h.push('</div>');
-    h.push('</div>');
+    h.push('<tr' + (live ? ' class="is-live"' : '') + '>');
+    h.push('<td class="rc"><span class="reason-code">' + esc('(' + r.code + ')') + '</span>'
+      + (r.seen ? '<span class="tag tag-seen">常见</span>' : '')
+      + (live ? '<span class="tag tag-live">排队中</span>' : '')
+      + '</td>');
+    h.push('<td class="rd"><span class="rm-desc">' + esc(r.desc) + '</span>'
+      + '<span class="rm-act">→ ' + esc(r.act) + '</span></td>');
+    h.push('<td class="ra"><span class="tag '
+      + (r.mode === 'auto' ? 'tag-auto' : r.mode === 'manual' ? 'tag-manual' : 'tag-cond') + '">'
+      + (r.mode === 'auto' ? '会自动开始' : r.mode === 'manual' ? '须自己修改' : '视前序作业')
+      + '</span></td>');
+    h.push('</tr>');
   });
-  h.push('</div>');
+  h.push('</tbody></table></div>');
 
   h.push('<div class="sub-text sm">'
-    + '注 1：正在运行的作业「原因」列显示的是<strong>节点名</strong>（如 comput03），不是等待原因。<br>'
-    + '注 2：student / teacher / test 三个分区共用全部 10 台机器（960 核），'
-    + '某分区看似空闲也可能因集群整体占满而排队。<br>'
-    + '注 3：若遇到本表未列出的原因码，请把 squeue 的完整输出发给集群管理员。'
+    + '注：运行中作业的「原因」列显示的是<strong>节点名</strong>（如 comput03），不是等待原因；'
+    + '遇到本表未列出的原因码，请把 squeue 的完整输出发给集群管理员。'
     + '</div>');
   h.push('</div>');
   return h.join('');

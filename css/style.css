@@ -282,25 +282,20 @@ tr:hover td { background:rgba(79,110,247,.04); }
 .reason-live-chip.is-unknown { background:rgba(239,68,68,.1); color:#991b1b; border-color:rgba(239,68,68,.22); }
 .reason-live-empty { font-size:.85rem; color:var(--text2); }
 
-.reason-list { display:flex; flex-direction:column; gap:9px; }
-/* 左列放原因码，右列放说明；窄屏时改为上下堆叠，避免表格横向滚动 */
-.reason-item {
-  display:grid; grid-template-columns:minmax(0,215px) minmax(0,1fr);
-  gap:3px 16px; padding:11px 13px; border-radius:8px;
-  background:rgba(79,110,247,.035); border-left:3px solid rgba(79,110,247,.22);
-}
-.reason-item.seen { background:rgba(79,110,247,.07); border-left-color:rgba(79,110,247,.55); }
-.reason-item.is-live { border-left-color:#f59e0b; background:rgba(245,158,11,.07); }
-.reason-head { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+/* 原因速查表：一行一条，比卡片列表省一半以上高度 */
+.reason-table { font-size:.83rem; }
+.reason-table th { padding:9px 10px; }
+.reason-table td { padding:9px 10px; text-align:left; vertical-align:top; }
+.reason-table td.rc { white-space:normal; overflow-wrap:anywhere; }
+.reason-table td.ra { text-align:center; white-space:nowrap; }
+.reason-table td.rc .tag { margin-left:6px; vertical-align:1px; }
 .reason-code {
   font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size:.79rem; font-weight:600; color:var(--primary); word-break:break-all;
+  font-size:.78rem; font-weight:600; color:var(--primary);
 }
-.reason-name { font-size:.9rem; font-weight:600; color:var(--text); }
-.reason-name .tag { margin-left:8px; vertical-align:1px; }
-.reason-desc { font-size:.84rem; color:var(--text2); margin-top:4px; }
-.reason-meta { font-size:.78rem; color:var(--text2); margin-top:5px; }
-.reason-meta b { color:var(--text); font-weight:600; }
+.reason-table .rm-desc { color:var(--text); }
+.reason-table .rm-act { color:var(--text2); font-size:.79rem; margin-left:6px; }
+.reason-table tr.is-live td { background:rgba(245,158,11,.06); }
 
 /* ===== Alert ===== */
 .alert-item { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-radius:8px; margin-bottom:8px; font-size:.85rem; }
@@ -572,9 +567,11 @@ body.modal-open { overflow: hidden; }
 }
 
 @media(max-width:640px) {
-  /* 窄屏下原因码与说明改为上下堆叠，避免两列都过窄 */
-  .reason-item { grid-template-columns:1fr; gap:6px; }
-  .reason-item > .reason-head { padding-bottom:2px; }
+  /* 窄屏下原因表压缩内边距，标签换行堆叠，避免横向溢出 */
+  .reason-table { font-size:.8rem; }
+  .reason-table th, .reason-table td { padding:8px 7px; }
+  .reason-table td.rc .tag { display:block; margin:4px 0 0; width:max-content; }
+  .reason-table td.ra { white-space:normal; }
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .header h1 { font-size:1.2rem; }
   .header p { font-size:.82rem; }
