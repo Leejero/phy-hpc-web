@@ -104,8 +104,13 @@ window.addEventListener('scroll', function () {
   if (_backTopTimer) return;
   _backTopTimer = requestAnimationFrame(function () {
     var btn = $('backTop');
-    if (window.scrollY > 300) btn.classList.add('show');
-    else btn.classList.remove('show');
+    if (btn) {
+      if (window.scrollY > 300) btn.classList.add('show');
+      else btn.classList.remove('show');
+    }
+    // 顶栏滚动态：离开页面顶部后转为更通透的半透明（样式见 .header.scrolled）
+    var hd = document.querySelector('.header');
+    if (hd) hd.classList.toggle('scrolled', window.scrollY > 24);
     _backTopTimer = null;
   });
 }, { passive: true });
@@ -115,6 +120,14 @@ window.addEventListener('scroll', function () {
 // ============================================================
 
 var _sidebarInited = false;
+
+// 顶部栏现为常驻吸顶（position:sticky），会覆盖正文顶部约一行高度。
+// 侧栏锚点跳转与滚动高亮都必须避开它，否则标题会被压在栏下看不见。
+// 高度随断点字号变化，故每次实时读取而非缓存。
+function stickyHeaderH() {
+  var h = document.querySelector('.header');
+  return h ? h.offsetHeight : 0;
+}
 
 function initSidebarScroll() {
   if (_sidebarInited) return;
@@ -133,8 +146,9 @@ function initSidebarScroll() {
     if (scrollTimer) return;
     scrollTimer = requestAnimationFrame(function () {
       var cur = sections[0];
+      var line = stickyHeaderH() + 8;   // 高亮判定线置于吸顶栏下沿
       for (var i = 0; i < sections.length; i++) {
-        if (sections[i].el.getBoundingClientRect().top <= 80) cur = sections[i];
+        if (sections[i].el.getBoundingClientRect().top <= line) cur = sections[i];
       }
       // 滚动到页面底部时直接高亮最后一节（替代原先靠 40vh 底部留白实现的效果）
       if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
@@ -151,7 +165,8 @@ function initSidebarScroll() {
       if (!a.getAttribute('data-section')) return; // 不拦截外部链接
       e.preventDefault();
       var el = document.getElementById(a.getAttribute('data-section'));
-      if (el) window.scrollTo({ top: el.offsetTop - 10, behavior: 'smooth' });
+      // 减去吸顶栏高度，保证目标标题落在栏目下沿而非被遮住
+      if (el) window.scrollTo({ top: el.offsetTop - stickyHeaderH() - 12, behavior: 'smooth' });
     });
   });
 }

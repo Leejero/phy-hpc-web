@@ -151,7 +151,19 @@ body {
   backdrop-filter: blur(20px) saturate(1.8);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   border-bottom:1px solid rgba(79,110,247,.1);
-  color:var(--text); padding:24px 0 18px; text-align:center; position:relative;
+  color:var(--text); padding:24px 0 18px; text-align:center;
+  /* 全局常驻：随页面滚动固定在视口顶部，不再滚走。
+     z-index 150 —— 低于侧边栏(200)与侧栏开关(180)，高于正文内容 */
+  position: sticky; top: 0; z-index: 150;
+  /* 背景透明度随滚动状态平滑过渡（见下方 .scrolled） */
+  transition: background .28s ease, border-color .28s ease, box-shadow .28s ease;
+}
+/* 向下滚动后转为更通透的半透明，降低对正文的压迫感。
+   仅调透明度与阴影、不改高度——高度变化会引起正文回流跳动 */
+.header.scrolled {
+  background: rgba(255,255,255,.32);
+  border-bottom-color: rgba(79,110,247,.06);
+  box-shadow: 0 2px 18px rgba(30,41,59,.08);
 }
 .header h1 { font-size:1.8rem; font-weight:700; letter-spacing:.5px; background:linear-gradient(135deg, #4f6ef7, #7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .header p { color:var(--text2); margin-top:6px; font-size:.95rem; }
