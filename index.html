@@ -103,6 +103,64 @@
   <div class="container" id="app">
     <div class="loading" id="loader"><div class="spinner"></div>正在获取集群数据...</div>
   </div>
+
+  <!-- App 功能迭代（页面最下）
+       刻意放在 #app 之外：render() 每次数据变化都会重建 #app 的整个内容，
+       放进去会导致展开状态被重置（轮询周期 5 分钟）。
+       交互（默认收起 → 点击展开 → 30 秒后自动收起）见 main.js 的 initAppLog() -->
+  <section class="container applog-wrap" id="appLog">
+    <button class="applog-head" id="appLogToggle" type="button" aria-expanded="false" aria-controls="appLogBody">
+      <span class="applog-name"><svg class="ic" aria-hidden="true"><use href="#ic-phone"/></svg> App 功能迭代</span>
+      <span class="applog-side">
+        <span class="applog-cd" id="appLogCd"></span>
+        <span class="applog-hint">展开</span>
+        <span class="applog-caret" aria-hidden="true">▾</span>
+      </span>
+    </button>
+    <div class="applog-body" id="appLogBody">
+      <div class="applog-inner">
+        <div class="applog-card">
+          <ul class="applog-list">
+            <li class="applog-item">
+              <div class="applog-ver">v1.0.6<span class="applog-date">2026-10-16</span><span class="applog-flag">最新</span></div>
+              <ul><li>「更多 → 关于」显示当前版本号，不用再猜装的是哪一版</li></ul>
+            </li>
+            <li class="applog-item">
+              <div class="applog-ver">v1.0.5<span class="applog-date">2026-10-15</span></div>
+              <ul>
+                <li>修复「刷新失败」误报：明明刷新成功却提示失败的情况没有了</li>
+                <li>服务器掉线提示更及时：数据停了多久逐秒更新，恢复后自动消失</li>
+              </ul>
+            </li>
+            <li class="applog-item">
+              <div class="applog-ver">v1.0.4<span class="applog-date">2026-10-15</span></div>
+              <ul><li>新增「排队原因速查」：一眼看清为何排队，点一下直接跳到在排队的任务</li></ul>
+            </li>
+            <li class="applog-item">
+              <div class="applog-ver">v1.0.3<span class="applog-date">2026-10-14</span></div>
+              <ul><li>修正夜间模式按钮文案（开启后仍显示「夜间模式」）</li></ul>
+            </li>
+            <li class="applog-item">
+              <div class="applog-ver">v1.0.2<span class="applog-date">2026-10-14</span></div>
+              <ul>
+                <li>换用正式发布构建，安装包 4.3 MB → 约 1 MB</li>
+                <li>新增进页时的「新版本提示」弹窗</li>
+                <li>下拉刷新、本地时钟走动、搜索入口位置等一批体验修复</li>
+              </ul>
+            </li>
+            <li class="applog-item">
+              <div class="applog-ver">v1.0.0<span class="applog-date">2026-10-07</span></div>
+              <ul>
+                <li>首个公开版本：集群看板，以及节点 / 任务 / QOS / 用户 / 在线终端 / INCAR 手册等板块</li>
+                <li>支持下拉刷新与悬浮刷新按钮、底部导航栏自定义</li>
+              </ul>
+            </li>
+          </ul>
+          <p class="applog-note">展开 30 秒后自动收起</p>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <!-- Fixed footer -->

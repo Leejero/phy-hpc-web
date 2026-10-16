@@ -1152,6 +1152,69 @@ function fillApkSize() {
 }
 
 // ============================================================
+// App 功能迭代板块：默认收起 → 点击展开 → 30 秒后自动收起
+// ------------------------------------------------------------
+// 内容在 index.html 里（静态），刻意放在 #app 之外 —— render() 每次数据变化都会
+// 重建 #app 的内容，放进去会让展开状态在轮询（5 分钟）时被重置。
+// ============================================================
+var APPLOG_AUTO_COLLAPSE_MS = 30000;   // 展开后的自动收起时长
+
+var _appLogTimer = null;               // 自动收起的定时器
+var _appLogTick = null;                // 倒计时的 1 秒刷新
+
+function _clearAppLogTimers() {
+  if (_appLogTimer) { clearTimeout(_appLogTimer); _appLogTimer = null; }
+  if (_appLogTick) { clearInterval(_appLogTick); _appLogTick = null; }
+}
+
+function collapseAppLog() {
+  var sec = $('appLog');
+  if (!sec) return;
+  sec.classList.remove('open');
+  _clearAppLogTimers();
+  var btn = $('appLogToggle');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  var hint = sec.querySelector('.applog-hint');
+  if (hint) hint.textContent = '展开';
+  var cd = $('appLogCd');
+  if (cd) cd.textContent = '';
+}
+
+function expandAppLog() {
+  var sec = $('appLog');
+  if (!sec) return;
+  sec.classList.add('open');
+  _clearAppLogTimers();
+  var btn = $('appLogToggle');
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  var hint = sec.querySelector('.applog-hint');
+  if (hint) hint.textContent = '收起';
+
+  // 倒计时按「目标时间戳」算差值，而不是每秒自减 —— 后台标签页被节流时依然准确
+  var endAt = Date.now() + APPLOG_AUTO_COLLAPSE_MS;
+  function paint() {
+    var cd = $('appLogCd');
+    if (!cd) return;
+    var left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+    cd.textContent = left + ' 秒后自动收起';
+  }
+  paint();
+  _appLogTick = setInterval(paint, 1000);
+  _appLogTimer = setTimeout(collapseAppLog, APPLOG_AUTO_COLLAPSE_MS);
+}
+
+function initAppLog() {
+  var btn = $('appLogToggle');
+  if (!btn) return;                     // 页面未包含该板块时静默跳过
+  btn.addEventListener('click', function () {
+    if ($('appLog').classList.contains('open')) collapseAppLog();
+    else expandAppLog();
+  });
+  // 首屏强制落到收起态（含浏览器前进/后退时恢复表单状态的情况）
+  collapseAppLog();
+}
+
+// ============================================================
 // 新版本提示弹窗（屏幕居中，显示 5 秒后自动收起，可手动关闭）
 // ------------------------------------------------------------
 // 【定时机制】弹窗只在下方 APP_NOTICE 设定的时间窗口内弹出，
@@ -1263,6 +1326,7 @@ refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
 initUserSearch();
 initAppModal();
 initAppNotice();
+initAppLog();
 initReasonJump();
 startClock();
 // 顶栏脱离文档流后需同步占位块高度（首次渲染时副标题文案尚未填充，
