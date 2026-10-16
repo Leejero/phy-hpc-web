@@ -235,9 +235,12 @@ function initSidebarScroll() {
     a.addEventListener('click', function (e) {
       if (!a.getAttribute('data-section')) return; // 不拦截外部链接
       e.preventDefault();
-      var el = document.getElementById(a.getAttribute('data-section'));
-      // 减去吸顶栏高度，保证目标标题落在栏目下沿而非被遮住
-      if (el) {
+      var secId = a.getAttribute('data-section');
+      var el = document.getElementById(secId);
+      if (!el) return;
+
+      function jumpTo() {
+        // 减去吸顶栏高度，保证目标标题落在栏目下沿而非被遮住
         var ch = collapsedHeaderH();
         // 预估落点：若滚动后仍处于 HEADER_DOWN 以下，顶栏届时是收起态，按收起高度算偏移；
         // 否则目标就在页面顶部附近，顶栏保持展开，按展开高度算。
@@ -247,6 +250,16 @@ function initSidebarScroll() {
           top: willCollapse ? el.offsetTop - ch - 12 : guessExpand,
           behavior: 'smooth'
         });
+      }
+
+      // 「App 功能迭代」默认收起。它是页面最后一节，**收起时页面不够长**，直接滚会被
+      // 夹在底部（标题贴在视口下沿、展开的内容落在屏幕外）。所以先展开、等 .3s 过渡
+      // 结束再滚 —— 展开只在本节内部向下增高，offsetTop 不变，但页面变长后落点才算得准。
+      if (secId === 'appLog') {
+        expandAppLog();
+        setTimeout(jumpTo, 340);
+      } else {
+        jumpTo();
       }
     });
   });

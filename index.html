@@ -45,6 +45,7 @@
   <symbol id="ic-warning" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
   <symbol id="ic-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="ic-log" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9.5 12h5"/><path d="M9.5 15.5h5"/></symbol>
 </svg>
 
 <!-- Sidebar -->
@@ -65,6 +66,7 @@
     <a href="#jobs" data-section="jobs"><span class="nav-icon"><svg class="ic"><use href="#ic-jobs"/></svg></span><span>任务列表</span></a>
     <a href="#users" data-section="users"><span class="nav-icon"><svg class="ic"><use href="#ic-users"/></svg></span><span>用户资源</span></a>
     <a href="#online" data-section="online"><span class="nav-icon"><svg class="ic"><use href="#ic-online"/></svg></span><span>在线终端</span></a>
+    <a href="#appLog" data-section="appLog"><span class="nav-icon"><svg class="ic"><use href="#ic-log"/></svg></span><span>App 功能迭代</span></a>
   </nav>
 <div class="sidebar-divider"></div>
 
@@ -110,7 +112,7 @@
        交互（默认收起 → 点击展开 → 30 秒后自动收起）见 main.js 的 initAppLog() -->
   <section class="container applog-wrap" id="appLog">
     <button class="applog-head" id="appLogToggle" type="button" aria-expanded="false" aria-controls="appLogBody">
-      <span class="applog-name"><svg class="ic" aria-hidden="true"><use href="#ic-phone"/></svg> App 功能迭代</span>
+      <span class="applog-name"><svg class="ic" aria-hidden="true"><use href="#ic-log"/></svg> App 功能迭代</span>
       <span class="applog-side">
         <span class="applog-cd" id="appLogCd"></span>
         <span class="applog-hint">展开</span>
@@ -149,7 +151,7 @@
               </ul>
             </li>
             <li class="applog-item">
-              <div class="applog-ver">v1.0.0<span class="applog-date">2026-10-07</span></div>
+              <div class="applog-ver">v1.0.0<span class="applog-date">2026-07-29</span></div>
               <ul>
                 <li>首个公开版本：集群看板，以及节点 / 任务 / QOS / 用户 / 在线终端 / INCAR 手册等板块</li>
                 <li>支持下拉刷新与悬浮刷新按钮、底部导航栏自定义</li>
