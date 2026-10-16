@@ -136,13 +136,45 @@ var _headerCollapsed = false;
 var NAV_LAND_GAP = 12;
 var NAV_HILITE_GAP = NAV_LAND_GAP + 8;
 
+// 程序化跳转期间把侧栏高亮**锁在目标项**上。
+// 不锁的话，平滑滚动会让高亮按位置逐项「扫过」中间各项 —— 滚动距离不同、扫过的项数
+// 就不同，看起来就是忽快忽慢（实测点「在线终端」会依次闪过
+// announcement → overview → qos → jobs → users，远的条目明显更「赶」）。
+// 锁定后：点击立即高亮目标；只有用户自己滚动（滚轮 / 触摸 / 键盘）才交回滚动高亮。
+var _navLockId = null;
+
+function setSidebarActive(id) {
+  var links = document.querySelectorAll('.sidebar-nav a');
+  for (var i = 0; i < links.length; i++) {
+    var on = links[i].getAttribute('data-section') === id;
+    if (on) links[i].classList.add('active');
+    else links[i].classList.remove('active');
+  }
+}
+function lockSidebarActive(id) { _navLockId = id; setSidebarActive(id); }
+
+// 用户自己滚动就解除锁定。程序化滚动不会触发这些事件，所以跳转途中与跳转后停在目标节时，
+// 高亮都不会被位置判定夺回去。
+// pointerdown 用于覆盖「拖滚动条」——那条路径不产生 wheel/touchmove；
+// 它在 click 之前触发，所以点导航项时是「先解锁、再由点击重新锁定」，不受影响。
+['wheel', 'touchmove', 'keydown', 'pointerdown'].forEach(function (ev) {
+  window.addEventListener(ev, function () { _navLockId = null; }, { passive: true });
+});
+
 // 在「瞬时状态」下测量顶栏高度。
 // 直接加/删 .scrolled 后立刻读 offsetHeight 会拿到过渡动画的起点值
 //（实测把 55px 读成 185px），故统一走 .measuring —— 它连同后代一起禁用 transition。
-function dispatchMeasure(hd, mutate) {
+// ⚠ restore 必须在 .measuring 仍然生效时执行：只把状态改回去、却等到放开过渡之后，
+//   浏览器会从「测量时的状态」动画回原状 —— 用户看到的是顶栏「瞬间收起、再缓缓展开」
+//   （首屏尤其明显，实测 t≈240ms 高度掉回 55 再涨到 207，就是一次这样的闪动）。
+function dispatchMeasure(hd, mutate, restore) {
   hd.classList.add('measuring');
   mutate();
   var h = hd.offsetHeight;   // 强制同步布局，此时过渡已被禁用
+  if (restore) restore();
+  void hd.offsetHeight;      // ★ 再强制一次：让「已还原」的状态也在禁过渡时落地。
+                             //   没有这一句时，浏览器会拿「测量态」（如 55px）当过渡起点、
+                             //   拿还原后的值（207px）当终点，于是照样动画一遍。
   hd.classList.remove('measuring');
   return h;
 }
@@ -158,8 +190,9 @@ function syncHeaderSpacer() {
   var had = hd.classList.contains('scrolled');
   var natural = dispatchMeasure(hd, function () {
     if (had) hd.classList.remove('scrolled');   // 量展开态自然高度
+  }, function () {
+    if (had) hd.classList.add('scrolled');      // 在 .measuring 内还原，避免可见的收放动画
   });
-  hd.classList.toggle('scrolled', had);         // 还原到调用前的状态（见下）
   if (natural > 0) sp.style.height = natural + 'px';
 }
 
@@ -205,15 +238,13 @@ function collapsedHeaderH() {
   var hd = document.querySelector('.header');
   if (!hd) return 0;
   var had = hd.classList.contains('scrolled');
-  var h = dispatchMeasure(hd, function () {
+  // 加类测量 + **在同一瞬时状态下还原**（见 dispatchMeasure 注释：
+  // 还原若发生在放开过渡之后，用户会看到顶栏「瞬间收起再缓缓展开」）
+  return dispatchMeasure(hd, function () {
     if (!had) hd.classList.add('scrolled');
+  }, function () {
+    if (!had) hd.classList.remove('scrolled');
   });
-  // ⚠ 必须还原：dispatchMeasure 只负责「摆好姿势→测量」，并不会还原状态。
-  // 不还原会把顶栏**永久留在收起态** —— 加载时症状最明显：顶栏已收起（约 55px），
-  // 而 .header-spacer 还是 syncHeaderSpacer() 写入的展开高度（约 207px），
-  // 于是顶栏与「更新策略」之间空出一大片（实测 141~160px，手机上更显眼）。
-  hd.classList.toggle('scrolled', had);
-  return h;
 }
 
 function initSidebarScroll() {
@@ -232,6 +263,8 @@ function initSidebarScroll() {
   window.addEventListener('scroll', function () {
     if (scrollTimer) return;
     scrollTimer = requestAnimationFrame(function () {
+      // 锁定期间由点击决定高亮，不做位置判定（见 lockSidebarActive 注释）
+      if (_navLockId) { setSidebarActive(_navLockId); scrollTimer = null; return; }
       var cur = sections[0];
       var line = stickyHeaderH() + NAV_HILITE_GAP;   // 高亮判定线置于吸顶栏下沿
       for (var i = 0; i < sections.length; i++) {
@@ -254,6 +287,8 @@ function initSidebarScroll() {
       var secId = a.getAttribute('data-section');
       var el = document.getElementById(secId);
       if (!el) return;
+      // 点击立即高亮（并锁定，避免平滑滚动途中被位置判定逐项扫过 → 忽快忽慢）
+      lockSidebarActive(secId);
 
       function jumpTo() {
         // 先补足尾部留白：否则靠近文档末尾的节目标位置超过最大滚动量，
@@ -1188,17 +1223,16 @@ function fillApkSize() {
 // ============================================================
 // 导航尾部留白（syncTailSpacer）
 // ------------------------------------------------------------
-// 症状：点侧栏靠底部的几项（用户资源 / 在线终端）「没反应」。
-// 根因：跳转规则是「让该节标题落在顶栏下沿（约 67px）」，需要目标位置 = offsetTop − 67，
-//   但靠近文档末尾的几节下面内容不够高 → 目标 > 最大滚动量 → 浏览器把滚动**夹住**；
-//   若当前位置已经在最大值上，Δ 就是 0，看起来像点击失效（实测 vh=900 收起态 maxY=3348，
-//   在线终端目标 3648 超出；窗口更高时用户资源也会超出）。
-// 解法：按实际几何算出一段**刚好够用**的尾部留白，让倒数第二节能滚到顶。
-//   留白在所有内容之下，加高它不移动任何目标节的位置，所以可以在点击时先补足再滚。
-// 为什么只保证倒数第二节：最后一节是页尾的折叠面板，强行让它也顶到最上面需要额外留
-//   一大片空白，不值当（该面板展开时本身会撑高页面，反而够用）。
+// 目的：让靠文档末尾的几节也能被「滚到视口上部」，否则目标位置超过最大滚动量，
+//   滚动被夹住 → 点侧栏看起来没反应（详见 V6.12）。
+// 两条约束（都是踩坑换来的）：
+// ① 落点放宽到「视口上部 40%」而不是贴顶（67px）：贴顶要给下面留将近一整屏的空白，
+//   用户明确反馈「底部空白太大」。放宽后 900px 高的窗口只需约 20px 留白，且目标依然可达。
+// ② **只增不减**（resize 除外）：留白缩短会让文档变矮，把已经停在页面底部的用户
+//   被浏览器「钳制」着往上跳一段（实测 y 3660 → 3348 → 3660 来回跳），
+//   所以面板开合、数据刷新一律不让它缩短；只有 resize（整屏几何都变了）才重算。
 // ============================================================
-function syncTailSpacer() {
+function syncTailSpacer(force) {
   var sp = $('navTailSpacer');
   if (!sp) return;
   var links = document.querySelectorAll('.sidebar-nav a[data-section]');
@@ -1206,10 +1240,14 @@ function syncTailSpacer() {
   var el = document.getElementById(links[links.length - 2].getAttribute('data-section'));
   if (!el) return;
   var cur = sp.offsetHeight;                                  // 当前留白
-  var contentH = document.documentElement.scrollHeight - cur; // 去掉留白后的内容高度
-  // 目标节标题贴到顶栏下沿时，需要的最小内容高度
-  var need = el.offsetTop + (window.innerHeight - collapsedHeaderH() - NAV_LAND_GAP) - contentH + 12; // +12 留点余量
-  sp.style.height = Math.max(0, Math.round(need)) + 'px';
+  var contentH = document.documentElement.scrollHeight - cur;  // 去掉留白后的内容高度
+  // 「可接受的最低落点」：标题至少要落到视口上部 30% 以内。
+  // 取 max 而不是 min —— 67px（贴顶）是更严格的要求、要留近一整屏空白；
+  // 30% 更宽松，留白随之大幅减小（900px 窗口：392px → 约 190px），且目标仍可达。
+  var landWant = Math.max(collapsedHeaderH() + NAV_LAND_GAP, Math.round(window.innerHeight * 0.3));
+  var want = Math.max(0, Math.round(el.offsetTop + (window.innerHeight - landWant) - contentH + 12));
+  if (!force && want < cur) return;   // 见约束②
+  sp.style.height = want + 'px';
 }
 
 // ============================================================
@@ -1239,8 +1277,6 @@ function collapseAppLog() {
   if (hint) hint.textContent = '展开';
   var cd = $('appLogCd');
   if (cd) cd.textContent = '';
-  // 等折叠过渡走完再算尾部留白：过渡途中量到的是中间高度，会把留白算得偏大
-  setTimeout(syncTailSpacer, 360);
 }
 
 function expandAppLog() {
@@ -1264,8 +1300,6 @@ function expandAppLog() {
   paint();
   _appLogTick = setInterval(paint, 1000);
   _appLogTimer = setTimeout(collapseAppLog, APPLOG_AUTO_COLLAPSE_MS);
-  // 展开会撑高页面，尾部留白可以相应减小；等过渡走完再算（途中量到中间高度会算偏）
-  setTimeout(syncTailSpacer, 360);
 }
 
 function initAppLog() {
@@ -1402,7 +1436,7 @@ syncTailSpacer();
 var _spacerResizeTimer = null;
 window.addEventListener('resize', function () {
   if (_spacerResizeTimer) clearTimeout(_spacerResizeTimer);
-  _spacerResizeTimer = setTimeout(function () { syncHeaderSpacer(); syncTailSpacer(); }, 150);
+  _spacerResizeTimer = setTimeout(function () { syncHeaderSpacer(); syncTailSpacer(true); }, 150);
 });
 
 document.addEventListener('visibilitychange', function () {
