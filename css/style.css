@@ -692,3 +692,7 @@ body.modal-open { overflow: hidden; }
 .applog-item ul { margin: 3px 0 0; padding-left: 18px; }
 .applog-item ul li { font-size: .79rem; color: var(--text2); line-height: 1.6; }
 .applog-note { margin: 10px 0 0; font-size: .72rem; color: var(--text2); text-align: center; }
+
+/* 导航尾部留白：高度由 main.js 的 syncTailSpacer() 按实际几何写入。
+   作用见该函数注释 —— 保证靠底部的导航项能滚到视口顶部，否则点击会被滚动夹住。 */
+.nav-tail-spacer { flex: none; height: 0; }

@@ -163,6 +163,12 @@
       </div>
     </div>
   </section>
+
+  <!-- 导航尾部留白：高度由 main.js 的 syncTailSpacer() 按实际几何算出。
+       没有它时，靠底部的几节（用户资源 / 在线终端）「滚到标题贴顶栏下沿」的目标位置
+       会超过页面最大滚动量，浏览器把滚动夹住 → 点侧栏看起来「没反应」。
+       它位于所有内容之下，加高不会移动任何目标节的位置。 -->
+  <div class="nav-tail-spacer" id="navTailSpacer" aria-hidden="true"></div>
 </main>
 
 <!-- Fixed footer -->

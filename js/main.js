@@ -240,6 +240,9 @@ function initSidebarScroll() {
       if (!el) return;
 
       function jumpTo() {
+        // 先补足尾部留白：否则靠近文档末尾的节目标位置超过最大滚动量，
+        // 滚动会被夹住、看起来「点了没反应」。留白在目标节下方，不影响它的 offsetTop。
+        syncTailSpacer();
         // 减去吸顶栏高度，保证目标标题落在栏目下沿而非被遮住
         var ch = collapsedHeaderH();
         // 预估落点：若滚动后仍处于 HEADER_DOWN 以下，顶栏届时是收起态，按收起高度算偏移；
@@ -765,6 +768,8 @@ function render(d) {
   syncOfflineBanner();
   // 副标题文案（Slurm 版本 · 运行时间）首次填充后可能换行改变顶栏高度，需重算占位
   syncHeaderSpacer();
+  // 内容高度变了，尾部留白需重算（否则最后一节又可能滚不到顶）
+  syncTailSpacer();
 }
 
 // ============================================================
@@ -1165,6 +1170,33 @@ function fillApkSize() {
 }
 
 // ============================================================
+// 导航尾部留白（syncTailSpacer）
+// ------------------------------------------------------------
+// 症状：点侧栏靠底部的几项（用户资源 / 在线终端）「没反应」。
+// 根因：跳转规则是「让该节标题落在顶栏下沿（约 67px）」，需要目标位置 = offsetTop − 67，
+//   但靠近文档末尾的几节下面内容不够高 → 目标 > 最大滚动量 → 浏览器把滚动**夹住**；
+//   若当前位置已经在最大值上，Δ 就是 0，看起来像点击失效（实测 vh=900 收起态 maxY=3348，
+//   在线终端目标 3648 超出；窗口更高时用户资源也会超出）。
+// 解法：按实际几何算出一段**刚好够用**的尾部留白，让倒数第二节能滚到顶。
+//   留白在所有内容之下，加高它不移动任何目标节的位置，所以可以在点击时先补足再滚。
+// 为什么只保证倒数第二节：最后一节是页尾的折叠面板，强行让它也顶到最上面需要额外留
+//   一大片空白，不值当（该面板展开时本身会撑高页面，反而够用）。
+// ============================================================
+function syncTailSpacer() {
+  var sp = $('navTailSpacer');
+  if (!sp) return;
+  var links = document.querySelectorAll('.sidebar-nav a[data-section]');
+  if (links.length < 2) return;
+  var el = document.getElementById(links[links.length - 2].getAttribute('data-section'));
+  if (!el) return;
+  var cur = sp.offsetHeight;                                  // 当前留白
+  var contentH = document.documentElement.scrollHeight - cur; // 去掉留白后的内容高度
+  // 目标节标题贴到顶栏下沿时，需要的最小内容高度
+  var need = el.offsetTop + (window.innerHeight - collapsedHeaderH() - 12) - contentH + 12; // +12 留点余量
+  sp.style.height = Math.max(0, Math.round(need)) + 'px';
+}
+
+// ============================================================
 // App 功能迭代板块：默认收起 → 点击展开 → 30 秒后自动收起
 // ------------------------------------------------------------
 // 内容在 index.html 里（静态），刻意放在 #app 之外 —— render() 每次数据变化都会
@@ -1191,6 +1223,8 @@ function collapseAppLog() {
   if (hint) hint.textContent = '展开';
   var cd = $('appLogCd');
   if (cd) cd.textContent = '';
+  // 等折叠过渡走完再算尾部留白：过渡途中量到的是中间高度，会把留白算得偏大
+  setTimeout(syncTailSpacer, 360);
 }
 
 function expandAppLog() {
@@ -1214,6 +1248,8 @@ function expandAppLog() {
   paint();
   _appLogTick = setInterval(paint, 1000);
   _appLogTimer = setTimeout(collapseAppLog, APPLOG_AUTO_COLLAPSE_MS);
+  // 展开会撑高页面，尾部留白可以相应减小；等过渡走完再算（途中量到中间高度会算偏）
+  setTimeout(syncTailSpacer, 360);
 }
 
 function initAppLog() {
@@ -1345,11 +1381,12 @@ startClock();
 // 顶栏脱离文档流后需同步占位块高度（首次渲染时副标题文案尚未填充，
 // 待数据回来后副标题换行可能导致高度变化，故此处与 render() 后各同步一次）
 syncHeaderSpacer();
+syncTailSpacer();
 
 var _spacerResizeTimer = null;
 window.addEventListener('resize', function () {
   if (_spacerResizeTimer) clearTimeout(_spacerResizeTimer);
-  _spacerResizeTimer = setTimeout(syncHeaderSpacer, 150);
+  _spacerResizeTimer = setTimeout(function () { syncHeaderSpacer(); syncTailSpacer(); }, 150);
 });
 
 document.addEventListener('visibilitychange', function () {
