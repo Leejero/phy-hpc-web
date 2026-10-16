@@ -127,6 +127,15 @@ var HEADER_DOWN = 140;
 var HEADER_UP = 80;
 var _headerCollapsed = false;
 
+// ⚠ 这一对常量必须成对修改，否则侧栏高亮会「差一节」：
+//   NAV_LAND_GAP   —— 锚点跳转把目标标题停在「顶栏下沿 + 这个值」处；
+//   NAV_HILITE_GAP —— 滚动高亮的判定线（最后一个 top ≤ 线的节被高亮）。
+// 判定线必须**比落点更靠下**（值更大），否则跳转后目标标题仍在判定线之下，
+// 会被判成「还没越过」→ 高亮停在上一节。原先写的是 +8 与 -12（差 4px），
+// 结果除首、尾两项外每一项都高亮错一节（实测落点 67、判定线 63）。
+var NAV_LAND_GAP = 12;
+var NAV_HILITE_GAP = NAV_LAND_GAP + 8;
+
 // 在「瞬时状态」下测量顶栏高度。
 // 直接加/删 .scrolled 后立刻读 offsetHeight 会拿到过渡动画的起点值
 //（实测把 55px 读成 185px），故统一走 .measuring —— 它连同后代一起禁用 transition。
@@ -224,7 +233,7 @@ function initSidebarScroll() {
     if (scrollTimer) return;
     scrollTimer = requestAnimationFrame(function () {
       var cur = sections[0];
-      var line = stickyHeaderH() + 8;   // 高亮判定线置于吸顶栏下沿
+      var line = stickyHeaderH() + NAV_HILITE_GAP;   // 高亮判定线置于吸顶栏下沿
       for (var i = 0; i < sections.length; i++) {
         if (sections[i].el.getBoundingClientRect().top <= line) cur = sections[i];
       }
@@ -254,15 +263,15 @@ function initSidebarScroll() {
         var ch = collapsedHeaderH();
         // 预估落点：若滚动后仍处于 HEADER_DOWN 以下，顶栏届时是收起态，按收起高度算偏移；
         // 否则目标就在页面顶部附近，顶栏保持展开，按展开高度算。
-        var guessExpand = el.offsetTop - stickyHeaderH() - 12;
-        var willCollapse = (el.offsetTop - ch - 12) > HEADER_DOWN;
+        var guessExpand = el.offsetTop - stickyHeaderH() - NAV_LAND_GAP;
+        var willCollapse = (el.offsetTop - ch - NAV_LAND_GAP) > HEADER_DOWN;
         window.scrollTo({
-          top: willCollapse ? el.offsetTop - ch - 12 : guessExpand,
+          top: willCollapse ? el.offsetTop - ch - NAV_LAND_GAP : guessExpand,
           behavior: 'smooth'
         });
       }
 
-      // 「App 功能迭代」默认收起。它是页面最后一节，**收起时页面不够长**，直接滚会被
+      // 「客户端版本记录」默认收起。它是页面最后一节，**收起时页面不够长**，直接滚会被
       // 夹在底部（标题贴在视口下沿、展开的内容落在屏幕外）。所以先展开、等 .3s 过渡
       // 结束再滚 —— 展开只在本节内部向下增高，offsetTop 不变，但页面变长后落点才算得准。
       if (secId === 'appLog') {
@@ -493,9 +502,9 @@ function jumpToPendingTasks(code) {
     var sect = document.getElementById('jobs');
     if (sect) {
       var ch0 = collapsedHeaderH();
-      var guess0 = sect.offsetTop - stickyHeaderH() - 12;
-      var will0 = (sect.offsetTop - ch0 - 12) > HEADER_DOWN;
-      window.scrollTo({ top: Math.max(0, will0 ? sect.offsetTop - ch0 - 12 : guess0), behavior: 'smooth' });
+      var guess0 = sect.offsetTop - stickyHeaderH() - NAV_LAND_GAP;
+      var will0 = (sect.offsetTop - ch0 - NAV_LAND_GAP) > HEADER_DOWN;
+      window.scrollTo({ top: Math.max(0, will0 ? sect.offsetTop - ch0 - NAV_LAND_GAP : guess0), behavior: 'smooth' });
     }
     return false;
   }
@@ -505,8 +514,8 @@ function jumpToPendingTasks(code) {
   var thead = table.tHead ? table.tHead.offsetHeight : 0;
   var ch = collapsedHeaderH();
   var targetDocTop = hits[0].getBoundingClientRect().top + window.scrollY;
-  var willCollapse = (targetDocTop - ch - thead - 12) > HEADER_DOWN;
-  var top = targetDocTop - (willCollapse ? ch : stickyHeaderH()) - thead - 12;
+  var willCollapse = (targetDocTop - ch - thead - NAV_LAND_GAP) > HEADER_DOWN;
+  var top = targetDocTop - (willCollapse ? ch : stickyHeaderH()) - thead - NAV_LAND_GAP;
   window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
 
   // 高亮：先清掉上一轮，再给本轮命中行打标；2.4 秒后自动褪去
@@ -1199,12 +1208,12 @@ function syncTailSpacer() {
   var cur = sp.offsetHeight;                                  // 当前留白
   var contentH = document.documentElement.scrollHeight - cur; // 去掉留白后的内容高度
   // 目标节标题贴到顶栏下沿时，需要的最小内容高度
-  var need = el.offsetTop + (window.innerHeight - collapsedHeaderH() - 12) - contentH + 12; // +12 留点余量
+  var need = el.offsetTop + (window.innerHeight - collapsedHeaderH() - NAV_LAND_GAP) - contentH + 12; // +12 留点余量
   sp.style.height = Math.max(0, Math.round(need)) + 'px';
 }
 
 // ============================================================
-// App 功能迭代板块：默认收起 → 点击展开 → 30 秒后自动收起
+// 客户端版本记录板块：默认收起 → 点击展开 → 30 秒后自动收起
 // ------------------------------------------------------------
 // 内容在 index.html 里（静态），刻意放在 #app 之外 —— render() 每次数据变化都会
 // 重建 #app 的内容，放进去会让展开状态在轮询（5 分钟）时被重置。
