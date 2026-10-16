@@ -150,6 +150,7 @@ function syncHeaderSpacer() {
   var natural = dispatchMeasure(hd, function () {
     if (had) hd.classList.remove('scrolled');   // 量展开态自然高度
   });
+  hd.classList.toggle('scrolled', had);         // 还原到调用前的状态（见下）
   if (natural > 0) sp.style.height = natural + 'px';
 }
 
@@ -195,9 +196,15 @@ function collapsedHeaderH() {
   var hd = document.querySelector('.header');
   if (!hd) return 0;
   var had = hd.classList.contains('scrolled');
-  return dispatchMeasure(hd, function () {
+  var h = dispatchMeasure(hd, function () {
     if (!had) hd.classList.add('scrolled');
   });
+  // ⚠ 必须还原：dispatchMeasure 只负责「摆好姿势→测量」，并不会还原状态。
+  // 不还原会把顶栏**永久留在收起态** —— 加载时症状最明显：顶栏已收起（约 55px），
+  // 而 .header-spacer 还是 syncHeaderSpacer() 写入的展开高度（约 207px），
+  // 于是顶栏与「更新策略」之间空出一大片（实测 141~160px，手机上更显眼）。
+  hd.classList.toggle('scrolled', had);
+  return h;
 }
 
 function initSidebarScroll() {
