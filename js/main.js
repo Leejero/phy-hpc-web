@@ -1119,6 +1119,36 @@ function initAppModal() {
       }
     });
   }
+
+  fillApkSize();
+}
+
+// APK 体积：读实际文件的 Content-Length，不写死。
+// 写死的后果是每发一版都要回来改一次数字，忘了就会出现「包已经 1 MB 了、按钮还写着 0.95 MB」。
+// 口径用十进制（1 MB = 1000000 B），与系统「应用信息」、应用商店的显示一致；
+// 早先那个 0.95 MB 是按 1024 进制（MiB）算的，同一份 1003040 B 的包在十进制下是 1.0 MB，
+// 两种算法都没错、但混用会让用户以为体积没涨。
+function fmtApkSize(bytes) {
+  if (!bytes || bytes <= 0) return '';
+  var mb = bytes / 1000000;
+  return mb >= 1 ? mb.toFixed(1) + ' MB' : mb.toFixed(2) + ' MB';
+}
+function fillApkSize() {
+  var els = document.querySelectorAll('[data-apk-size]');
+  if (!els.length) return;
+  // HEAD 只取响应头，不下载整包（同源请求，CSP connect-src 'self' 允许）
+  fetch('download/PhyHPC-Monitor.apk', { method: 'HEAD', cache: 'no-cache' })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var n = parseInt(r.headers.get('content-length'), 10);
+      var t = fmtApkSize(n);
+      if (!t) throw new Error('缺少 Content-Length');
+      for (var i = 0; i < els.length; i++) els[i].textContent = t;
+    })
+    .catch(function (e) {
+      // 取不到就保留 HTML 里的静态兜底文案，不影响下载
+      console.warn('APK 体积读取失败，沿用静态文案: ' + e.message);
+    });
 }
 
 // ============================================================
