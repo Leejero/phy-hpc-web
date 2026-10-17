@@ -1,0 +1,7 @@
+{
+  "versionName": "1.0.8",
+  "versionCode": 9,
+  "released": "2026-10-17",
+  "apk": "download/PhyHPC-Monitor.apk",
+  "notes": "启动时检查更新；上一版改为数据「先到先显示」"
+}

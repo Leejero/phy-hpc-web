@@ -124,7 +124,14 @@
         <div class="applog-card">
           <ul class="applog-list">
             <li class="applog-item">
-              <div class="applog-ver">v1.0.7<span class="applog-date">2026-10-17</span><span class="applog-flag">最新</span></div>
+              <div class="applog-ver">v1.0.8<span class="applog-date">2026-10-17</span><span class="applog-flag">最新</span></div>
+              <ul>
+                <li>新增：启动时自动检查新版本，「更多 → 关于」会提示可更新的版本</li>
+                <li>修复：安装包内置的离线数据未随版本更新（此前长期停留在 2026-07-29）</li>
+              </ul>
+            </li>
+            <li class="applog-item">
+              <div class="applog-ver">v1.0.7<span class="applog-date">2026-10-17</span></div>
               <ul>
                 <li>优化：数据刷新改为「先到先显示」，最快的数据源返回即更新界面，不再等待全部数据源（此前启动后约需 5 秒才显示最新数据）</li>
               </ul>
@@ -194,7 +201,7 @@
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
     <button class="modal-close" id="appModalClose" type="button" aria-label="关闭">✕</button>
     <h3 class="modal-title" id="appModalTitle"><svg class="ic"><use href="#ic-phone"/></svg> 手机端 App</h3>
-    <p class="modal-sub">物电 HPC 集群监控 · Android 客户端 v1.0.7</p>
+    <p class="modal-sub">物电 HPC 集群监控 · Android 客户端 v1.0.8</p>
 
     <div class="qr-frame">
       <img src="download/qrcode-app.png" alt="扫码下载物电 HPC 集群监控 APK 安装包" width="200" height="200">
@@ -207,7 +214,7 @@
     <button class="modal-btn ghost" id="appCopyLink" type="button">复制下载链接</button>
 
     <ul class="modal-notes">
-      <li>当前版本 v1.0.7 · 更新于 2026-10-17</li>
+      <li>当前版本 v1.0.8 · 更新于 2026-10-17</li>
       <li>今后新版 App 均在此二维码处刷新</li>
       <li>适用系统：Android 7.0 及以上</li>
     </ul>
@@ -220,7 +227,7 @@
     <button class="notice-close" id="appNoticeClose" type="button" aria-label="关闭">✕</button>
     <div class="notice-badge"><svg class="ic"><use href="#ic-phone"/></svg></div>
     <h3 class="notice-title" id="appNoticeTitle">手机端 App 已迭代</h3>
-    <p class="notice-text">物电 HPC 集群监控 <b>v1.0.7</b> 已发布，启动时数据刷新更快，欢迎更新。</p>
+    <p class="notice-text">物电 HPC 集群监控 <b>v1.0.8</b> 已发布，新增启动自动检查更新，欢迎更新。</p>
     <button class="notice-btn" id="appNoticeGo" type="button">
       <svg class="ic"><use href="#ic-download"/></svg> 立即下载
     </button>

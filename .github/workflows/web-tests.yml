@@ -1,0 +1,52 @@
+# 网页端探针（Playwright）
+# 说明：
+#   · 数据文件由集群 cron 每 20 分钟推送一次（data/**），必须 paths-ignore ——
+#     否则每天会触发 70+ 次无意义的 CI 运行。
+#   · 探针需要浏览器，故在 CI 内安装 chromium；本地直接 npm test 亦可。
+name: web-tests
+
+on:
+  push:
+    paths-ignore:
+      - 'data/**'
+      - 'download/**'
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - 'data/**'
+      - 'download/**'
+      - '**.md'
+  workflow_dispatch:
+
+concurrency:
+  group: web-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装依赖
+        run: npm install --no-audit --no-fund
+
+      - name: 安装 chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: 运行探针
+        run: npm test
+
+      - name: 失败时保留现场
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-screens
+          path: tests/.tmp/
+          if-no-files-found: ignore
+          retention-days: 7

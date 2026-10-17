@@ -1,0 +1,12 @@
+{
+  "name": "phy-hpc-web-tests",
+  "private": true,
+  "description": "物电 HPC 集群监控网页端：探针（Playwright）",
+  "scripts": {
+    "test": "node tests/run-web.js",
+    "test:fast": "node tests/run-web.js --fast"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1"
+  }
+}

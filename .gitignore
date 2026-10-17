@@ -16,3 +16,8 @@ desktop.ini
 # Python
 __pycache__/
 *.pyc
+
+# 探针依赖与临时产物
+node_modules/
+tests/.tmp/
+package-lock.json
