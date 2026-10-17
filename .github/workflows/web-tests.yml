@@ -17,6 +17,9 @@ on:
       - 'download/**'
       - '**.md'
   workflow_dispatch:
+  # 每天 18:30 UTC（北京时间 02:30）跑全集（含 30 秒真等待的慢探针）
+  schedule:
+    - cron: '30 18 * * *'
 
 concurrency:
   group: web-tests-${{ github.ref }}
@@ -25,7 +28,7 @@ concurrency:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +42,16 @@ jobs:
       - name: 安装 chromium
         run: npx playwright install --with-deps chromium
 
-      - name: 运行探针
+      # ⚠ CI 是 2 核机器、无 GPU，探针比本地慢 2~3 倍（本地全集约 11 分钟）：
+      #   实测全集在 25 分钟超时内跑不完。故 push/PR 只跑快集（约 10~12 分钟），
+      #   全集（含 probe_applog 的 30 秒真·自动收起、probe_nav_reach 的多档窗口逐项点击）
+      #   放到定时任务与手动触发。
+      - name: 运行探针（快集）
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: npm test -- --fast
+
+      - name: 运行探针（全集）
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
         run: npm test
 
       - name: 失败时保留现场
