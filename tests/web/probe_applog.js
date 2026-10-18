@@ -88,7 +88,8 @@ const STATE = () => {
     // 不再写死条数：每发一版都会加一条，写死只会制造假失败。
     // 判据改为「条数够多且首条就是当前发布版本」（当前版本取自 data/app_version.json）
     check(w + 'px 版本列表首条为当前版本',
-      s.items >= 6 && String(s.firstVer).indexOf('v' + APP_VER.versionName) === 0,
+      // 条数不再要求 >=6：1.0.x 已合并为一条汇总，列表长度取决于发版策略
+      s.items >= 2 && String(s.firstVer).indexOf('v' + APP_VER.versionName) === 0,
       s.items + ' 条 / 首条=' + s.firstVer);
     check(w + 'px 板块位于内容最下', s.isLastInMain === true, s.isLastInMain);
     check(w + 'px 无横向溢出', s.overflowX === false, s.overflowX);

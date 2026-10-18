@@ -85,7 +85,9 @@ function check(name, ok, extra) {
   console.log('   现在: ' + win.now);
   check('窗口起点不晚于当前时间', now >= start, 'diff=' + Math.round((now - start) / 3600000) + 'h');
   check('窗口终点晚于当前时间', now <= end, '剩 ' + Math.round((end - now) / 3600000) + 'h');
-  check('窗口起点为 2026-10-17', start === Date.parse('2026-10-17T00:00:00+08:00'), win.from);
+  // 不写死日期：窗口起点应等于本次发布日（取自 data/app_version.json 的 released）
+  check('窗口起点为发布日 ' + APP_VER.released,
+    win.from.indexOf(APP_VER.released) === 0, win.from);
 
   console.log('===== ④ 在线资源可达性 =====');
   const apkResp = await page.request.get(BASE + 'download/PhyHPC-Monitor.apk');

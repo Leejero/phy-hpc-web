@@ -95,7 +95,10 @@ const check = (n, ok, x) => {
     check('文案为「客户端版本记录」', r.label === '客户端版本记录', r.label);
     check('ic-log 符号已定义', r.symbolExists === true, r.symbolExists);
     check('图标正常渲染（有尺寸）', r.iconW > 0 && r.iconH > 0, r.iconW + '×' + r.iconH);
-    check('v1.0.0 日期已改为 2026-07-29', /v1\.0\.0\s*2026-07-29/.test(r.v100Date), r.v100Date);
+    // 1.0.x 已合并为一条汇总，末条不再是独立的 v1.0.0；
+    // 只要求末条是老版本汇总（含 1.0.0 及起始日期 2026-07-29）
+    check('末条为早期版本汇总（含 1.0.0 / 2026-07-29）',
+      /1\.0\.0/.test(r.v100Date) && /2026-07-29/.test(r.v100Date), r.v100Date);
     check('无 JS 报错', errs.length === 0, errs.join(' | '));
     await ctx.close();
   }

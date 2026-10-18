@@ -696,3 +696,6 @@ body.modal-open { overflow: hidden; }
 /* 导航尾部留白：高度由 main.js 的 syncTailSpacer() 按实际几何写入。
    作用见该函数注释 —— 保证靠底部的导航项能滚到视口顶部，否则点击会被滚动夹住。 */
 .nav-tail-spacer { flex: none; height: 0; }
+
+/* 版本记录里的汇总脚注（指向逐条明细） */
+.applog-sub { margin: 6px 0 0; padding-left: 2px; font-size: .78rem; color: var(--text2); }

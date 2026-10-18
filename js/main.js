@@ -1304,11 +1304,13 @@ function renderAppVersion(v) {
   } else {
     list.innerHTML = items.map(function (it) {
       var changes = (it.changes || []).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
+      // 汇总条目（多个版本合并成一条）可用 note 指向明细位置，避免列表无限变长
+      var note = it.note ? '<p class="applog-sub">' + esc(it.note) + '</p>' : '';
       return '<li class="applog-item">'
-        + '<div class="applog-ver">v' + esc(it.name)
+        + '<div class="applog-ver">' + (it.summary ? '' : 'v') + esc(it.name)
         + '<span class="applog-date">' + esc(it.released || '') + '</span>'
         + (it.latest ? '<span class="applog-flag">最新</span>' : '')
-        + '</div><ul>' + changes + '</ul></li>';
+        + '</div><ul>' + changes + '</ul>' + note + '</li>';
     }).join('');
   }
 
@@ -1389,8 +1391,8 @@ function initAppLog() {
 
 var APP_NOTICE = {
   // 生效时间窗口。带时区偏移（+08:00）书写，避免不同设备解析出歧义
-  from:  '2026-10-17T00:00:00+08:00',   // 开始显示
-  until: '2026-10-24T23:59:59+08:00'    // 到期后自动失效（本次为发布后一周）
+  from:  '2026-10-18T00:00:00+08:00',   // 开始显示
+  until: '2026-10-25T23:59:59+08:00'    // 到期后自动失效（本次为发布后一周）
 };
 
 function initAppNotice() {
