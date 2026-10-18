@@ -6,6 +6,37 @@
 
 ---
 
+## V6.18 · 2026-10-18 — 版本信息改为单一来源（`data/app_version.json`）
+
+### 背景
+版本号原本散落在四处：`index.html` 的下载弹窗、「客户端版本记录」列表、新版本提示弹窗，
+以及探针里的断言。每次发版要同步改四个地方，漏一处就出现「网页写着 v1.0.6、探针断言 v1.0.5」
+这类假失败 —— 本轮体检与探针迁移过程中已多次因此返工。
+
+### 改动
+- `data/app_version.json` 扩展为**唯一来源**：
+  - 顶部 `versionName / versionCode / released / apk / changes[]` = **当前版本**
+  - `history[]` = 已发布的历史版本（含各自的 `changes`）
+  - 原 `notes` 字段废弃，改用 `changes` 数组（App 端只读 `versionName/versionCode`，不受影响）
+- `js/main.js` 新增 `loadAppVersion()` / `renderAppVersion()`：加载后拉取该文件，填充
+  ① 下载弹窗的版本号与更新日期 ② 新版本提示弹窗里的版本号 ③ 渲染整个「客户端版本记录」列表
+  （自动为当前版本加「最新」标记）。`index.html` 中这些位置改为占位 `v—`，历史条目移出 HTML。
+  加载失败时显示「暂不可用 / 版本记录暂时无法加载」，不留空白、也不显示过时数字。
+- 渲染后调用 `syncTailSpacer()`，让尾部留白跟随列表高度重算（只增不减，不会引起跳动）。
+
+### 发版流程变化（已写入 README「发版（客户端）」）
+只改 `data/app_version.json`：更新顶部四个字段，并把上一版那条移入 `history` 最前面。
+**`index.html` 不再需要改动。**
+
+### 验证
+- 全量探针 **9/9 通过、256 项断言**（probe_applog 54、probe_publish 16、probe_header_state 40、
+  probe_nav_hilite 36、probe_nav_reach 34、probe_refresh 30、probe_applog_nav 31、probe_apksize 15）
+- 顺带修掉一个探针自身的坑：页面启用了 `scroll-behavior: smooth`，`scrollTo(0,0)` 是**动画**回顶
+  （实测 150ms 时 y 仍在 172），「等顶栏高度稳定」会过早退出（收起态 55px 会稳定两拍）→
+  改为同时等 `scrollY` 归零且高度稳定
+
+---
+
 ## V6.17 · 2026-10-17 — 客户端 v1.0.8（内置快照修复 + 启动检查更新）+ 探针入库并接入 CI
 
 对应上一轮体检报告中的 **P0-1、P1-4、P1-5**。

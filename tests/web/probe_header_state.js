@@ -102,16 +102,22 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const down = await snap();
     check(`${w}px 下滚后顶栏收起`, down.scrolled === true && down.headerH < side.hExpand - 40, 'scrolled=' + down.scrolled + ' h=' + down.headerH);
     await page.evaluate(() => window.scrollTo(0, 0));
-    // ⚠ 不能固定等待：展开过渡 0.3s + 浏览器繁忙时可能更久，量到中间值会差几像素
-    //   （本次实测偶发 177 vs 180）。改为轮询到顶栏高度连续两次不变。
+    // ⚠ 两个坑叠加，必须同时等：
+    //   ① 页面有 `scroll-behavior: smooth`，scrollTo(0,0) 是**动画**回顶（实测 150ms 时仍在 y=172）；
+    //   ② 顶栏展开过渡 0.3s，中途量到的是中间值。
+    //   只等「高度稳定」会过早退出（顶栏在收起态 55px 会稳定两拍），故还要等 scrollY 归零。
     let prevH = -1, stable = 0;
-    for (let i = 0; i < 24; i++) {
-      const h = await page.evaluate(() => Math.round(document.querySelector('.header').getBoundingClientRect().height));
-      if (h === prevH) stable++; else stable = 0;
-      prevH = h;
-      if (stable >= 2) break;
+    for (let i = 0; i < 40; i++) {
+      const st = await page.evaluate(() => ({
+        h: Math.round(document.querySelector('.header').getBoundingClientRect().height),
+        y: Math.round(window.scrollY)
+      }));
+      if (st.h === prevH) stable++; else stable = 0;
+      prevH = st.h;
+      if (st.y === 0 && stable >= 2) break;
       await sleep(120);
     }
+    await sleep(120);
     const top = await snap();
     check(`${w}px 回到顶部后顶栏展开`, top.scrolled === false, 'scrolled=' + top.scrolled + ' y=' + top.y);
     check(`${w}px 回顶后仍与占位块等高`, Math.abs(top.headerH - top.spacerH) <= 1, top.headerH + ' vs ' + top.spacerH);

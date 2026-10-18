@@ -1190,6 +1190,7 @@ function initAppModal() {
   }
 
   fillApkSize();
+  loadAppVersion();   // 版本号与版本记录由 data/app_version.json 填充（不等它，避免阻塞首屏）
 }
 
 // APK 体积：读实际文件的 Content-Length，不写死。
@@ -1251,6 +1252,70 @@ function syncTailSpacer(force) {
 }
 
 // ============================================================
+// ============================================================
+// 版本信息：单一来源 data/app_version.json
+// ------------------------------------------------------------
+// 网页下载弹窗（版本号 / 更新日期）、「客户端版本记录」列表、发布探针、以及 App 端启动检查更新
+// 全部读这一个文件 —— 发版时只改它，不再散落到 index.html / README / 探针里。
+// （历史上正是因为多处手写，才屡次出现「网页写着 v1.0.6、探针断言 v1.0.5」这类假失败。）
+// 结构：顶部 = 当前版本（用于弹窗与检查更新）；history = 已发布的历史版本（列表渲染用）。
+var _appVerLoading = null;
+
+function loadAppVersion() {
+  if (_appVerLoading) return _appVerLoading;
+  _appVerLoading = fetch('data/app_version.json', { cache: 'no-cache' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (v) { renderAppVersion(v); return v; })
+    .catch(function (e) {
+      // 拿不到就明确说一句，而不是留一片空白或显示过时数字
+      console.warn('版本信息加载失败: ' + e.message);
+      renderAppVersion(null);
+      return null;
+    });
+  return _appVerLoading;
+}
+
+function renderAppVersion(v) {
+  var nameEl = $('appVerName');
+  var noteEl = $('appVerNote');
+  var noticeEl = $('noticeVer');
+  if (nameEl) nameEl.textContent = (v && v.versionName) ? 'v' + v.versionName : '暂不可用';
+  if (noteEl) {
+    noteEl.textContent = (v && v.versionName)
+      ? 'v' + v.versionName + (v.released ? ' · 更新于 ' + v.released : '')
+      : '暂不可用';
+  }
+  if (noticeEl) noticeEl.textContent = (v && v.versionName) ? 'v' + v.versionName : 'v—';
+
+  var list = $('appLogList');
+  if (!list) return;
+
+  var items = [];
+  if (v && v.versionName) {
+    items.push({ name: v.versionName, released: v.released, changes: v.changes || [], latest: true });
+  }
+  if (v && Array.isArray(v.history)) {
+    v.history.forEach(function (h) { if (h && h.name) items.push(h); });
+  }
+
+  if (!items.length) {
+    list.innerHTML = '<li class="applog-item"><div class="applog-ver">—</div>'
+      + '<ul><li>版本记录暂时无法加载，请稍后刷新页面</li></ul></li>';
+  } else {
+    list.innerHTML = items.map(function (it) {
+      var changes = (it.changes || []).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
+      return '<li class="applog-item">'
+        + '<div class="applog-ver">v' + esc(it.name)
+        + '<span class="applog-date">' + esc(it.released || '') + '</span>'
+        + (it.latest ? '<span class="applog-flag">最新</span>' : '')
+        + '</div><ul>' + changes + '</ul></li>';
+    }).join('');
+  }
+
+  // 列表高度变了 → 尾部留白的需求也变（只增不减，安全）
+  if (typeof syncTailSpacer === 'function') syncTailSpacer();
+}
+
 // 客户端版本记录板块：默认收起 → 点击展开 → 30 秒后自动收起
 // ------------------------------------------------------------
 // 内容在 index.html 里（静态），刻意放在 #app 之外 —— render() 每次数据变化都会
