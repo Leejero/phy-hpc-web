@@ -6,6 +6,40 @@
 
 ---
 
+## V6.21 · 2026-10-19 — 客户端 v1.1.2：接入 Microsoft Clarity（会话回放 / 热图 / 崩溃分析）
+
+### 新增（App 原生层）
+- 依赖 `com.microsoft.clarity:clarity:3.10.0`（Maven Central；**钉死版本**，不用官方示例的 `3.+`，
+  以保证构建可复现）
+- `MainActivity.onCreate()` 内 `super` 之后初始化 Clarity（项目 ID `yzy0t88yve`，`LogLevel.None`），
+  整体 `try/catch(Throwable)` 兜底 —— 统计 SDK 不得影响启动
+- 新增常量 `CLARITY_VERBOSE_LOG`：排查接入问题时置 `true`，logcat 过滤 `Clarity` 看初始化日志
+
+### 注意事项（部署侧，非代码可改）
+- **必须在 Clarity 后台打开 `Settings → Setup → Enable web view capture`**：
+  本应用界面 100% 在 WebView 里，3.0.0 起该开关**只能**在后台设，不开则录像只呈现页面背景、
+  看不到任何内容。页面 URL 为 `https://localhost`（Capacitor 的 `androidScheme: https`），
+  若后台配置了 Allowed URLs，需包含 `localhost`
+- 数据上报仅支持 **Android 10（API 29）及以上**（SDK 自身限制，minSdk 24 可装但不上报）
+- 数据入库延迟 30 分钟 ~ 2 小时；调试可看 dashboard 的「进行中会话」
+
+### 影响
+- APK 1007968 B → **1445593 B（+442 KB）**，与官方口径「约 +400 KB」一致
+- 合并清单新增权限 `ACCESS_NETWORK_STATE`、`BIND_GET_INSTALL_REFERRER_SERVICE`；
+  新增组件 `com.microsoft.clarity.jobs.UploadSessionJob`
+- AAR 自带 `proguard.txt`（`-keep class com.microsoft.clarity.** {*;}`），R8 全模式下无需另加规则；
+  已核验 dex 内 737 个 Clarity 类、入口类与 Worker 均在
+
+### 发布
+- `data/app_version.json`：1.1.2 / versionCode 13 / 2026-10-19；`changes` 为概括性措辞
+  （修复若干已知问题、提升运行稳定性），history 前置 v1.1.1
+
+### 验证
+- App 端 `tests/run-app.js`：**4/4、104 项断言**（网页层未改动，属回归确认）
+- 网页端 `npm test`：见提交时探针结果
+
+---
+
 ## V6.20 · 2026-10-18 — 客户端 v1.1.1：关注候选并入在线用户 + 手动添加；移除看板搜索框；刷新按钮半透明
 
 ### 关注（App）
