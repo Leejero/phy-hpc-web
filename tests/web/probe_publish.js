@@ -94,7 +94,23 @@ function check(name, ok, extra) {
   const body = await apkResp.body();
   console.log('   APK: http=' + apkResp.status() + ' size=' + body.length);
   check('APK 可访问且 200', apkResp.status() === 200, apkResp.status());
-  check('APK 体积与产物一致（' + require('fs').statSync(APK_FILE).size + ' B）', body.length === require('fs').statSync(APK_FILE).size, body.length);
+  // ⚠ 关键一致性断言：APK 包内的版本必须与 app_version.json 相同。
+// 背景（2026-10-19）：v1.1.3 的发布提交只改了 CHANGELOG 和 APK，漏改 app_version.json ——
+// 弹窗/版本记录仍显示上一版，且 App 端 checkUpdate() 读到旧 versionCode，
+// 已装上一版的用户收不到更新提示。此前探针只比对「页面 vs JSON」，两边都旧照样通过，
+// 故必须与 APK 包内实际版本交叉验证（构建脚本会把版本写进 assets/public/js/version.js）。
+const apkVerJs = (() => {
+  try {
+    return require('child_process').execSync(`unzip -p "${APK_FILE}" assets/public/js/version.js`,
+      { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
+  } catch (e) { return ''; }
+})();
+const apkVer = (apkVerJs.match(/name:\s*'([^']+)',\s*code:\s*(\d+)/) || []);
+check('APK 包内版本与 app_version.json 一致',
+  apkVer[1] === APP_VER.versionName && Number(apkVer[2]) === Number(APP_VER.versionCode),
+  `APK=${apkVer[1] || '?'}/${apkVer[2] || '?'} vs JSON=${APP_VER.versionName}/${APP_VER.versionCode}`);
+
+check('APK 体积与产物一致（' + require('fs').statSync(APK_FILE).size + ' B）', body.length === require('fs').statSync(APK_FILE).size, body.length);
   const qrResp = await page.request.get(BASE + 'download/qrcode-app.png');
   check('二维码仍在（未重新生成也有效）', qrResp.status() === 200, qrResp.status());
 
