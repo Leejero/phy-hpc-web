@@ -306,15 +306,7 @@ function initSidebarScroll() {
         });
       }
 
-      // 「客户端版本记录」默认收起。它是页面最后一节，**收起时页面不够长**，直接滚会被
-      // 夹在底部（标题贴在视口下沿、展开的内容落在屏幕外）。所以先展开、等 .3s 过渡
-      // 结束再滚 —— 展开只在本节内部向下增高，offsetTop 不变，但页面变长后落点才算得准。
-      if (secId === 'appLog') {
-        expandAppLog();
-        setTimeout(jumpTo, 340);
-      } else {
-        jumpTo();
-      }
+      jumpTo();
     });
   });
 }
@@ -1125,15 +1117,91 @@ function initUserSearch() {
 // 手机端 App 下载弹窗
 // ============================================================
 
+var SOFTWARE_APPS = {
+  hpc: {
+    name: 'HPC 应用监管系统', platform: 'ANDROID 应用',
+    description: '物电 HPC 集群监控的安卓客户端。查看集群核心、节点、分区资源、任务队列与在线状态，并内置 INCAR 参数手册。',
+    date: '2026-10-19', url: 'download/PhyHPC-Monitor.apk', filename: '物电HPC集群监控.apk',
+    note: '适用于 Android 7.0 及以上系统。也可直接下载 APK 安装包。', android: true,
+    manual: 'download/HPC应用监管系统_用户手册.md', manualName: 'HPC应用监管系统_用户手册.md'
+  },
+  stepsnap: {
+    name: 'StepSnap', platform: 'WINDOWS 应用',
+    description: '自动记录鼠标与键盘操作，捕捉屏幕并生成步骤，支持截图标注、编辑与导出，快速制作图文操作教程。',
+    date: '2026-11-05', url: 'download/StepSnap.exe', filename: 'StepSnap.exe', size: 27007768,
+    note: 'Windows 10 / 11 · 单文件 EXE，双击即可使用。',
+    manual: 'download/StepSnap_用户手册.md', manualName: 'StepSnap_用户手册.md'
+  },
+  lwmg: {
+    name: 'LWMG', platform: 'WINDOWS 应用',
+    description: 'WorkBuddy 项目生命周期治理与记忆维护工具。盘点项目活跃状态、检索记忆内容，并导出项目与记忆治理台账。',
+    date: '2026-11-05', url: 'download/LWMG.exe', filename: 'LWMG.exe', size: 13426315,
+    note: 'Windows 10 / 11 · 单文件 EXE，需 WebView2 Runtime。',
+    manual: 'download/LWMG_用户手册.md', manualName: 'LWMG_用户手册.md'
+  }
+};
+
+// ============================================================
+// 自开发应用页：独立于看板显示，隐藏时不参与锚点滚动计算
+// ============================================================
+function showSelfApps(show) {
+  var page = $('selfApps');
+  if (!page) return;
+  ['app'].forEach(function (id) { var el = $(id); if (el) el.hidden = show; });
+  page.hidden = !show;
+  document.body.classList.toggle('apps-view', show);
+  setSidebarActive(show ? 'selfApps' : 'overview');
+  window.scrollTo(0, 0);
+}
+
+function initSelfAppsNav() {
+  var entry = document.querySelector('[data-section="selfApps"]');
+  var back = $('backDashboard');
+  if (!entry || !back) return;
+  entry.addEventListener('click', function (e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (window.innerWidth <= 1024) $('sidebar').classList.remove('open');
+    showSelfApps(true);
+    history.replaceState(null, '', '#selfApps');
+  }, true);
+  back.addEventListener('click', function (e) {
+    e.preventDefault();
+    showSelfApps(false);
+    history.replaceState(null, '', '#overview');
+  });
+  if (location.hash === '#selfApps') showSelfApps(true);
+}
+
 function initAppModal() {
   var modal = $('appModal');
-  var entry = $('appDownloadEntry');
-  if (!modal || !entry) return; // 页面未包含该模块时静默跳过
+  var entries = document.querySelectorAll('[data-app]');
+  if (!modal || !entries.length) return;
 
-  function openModal() {
+  function openModal(key) {
+    var app = SOFTWARE_APPS[key];
+    if (!app) return;
+    $('appModalTitle').textContent = app.name;
+    $('softwarePlatform').textContent = app.platform;
+    $('softwareDescription').textContent = app.description;
+    $('softwareDate').textContent = app.date;
+    $('softwareSize').textContent = app.android ? fmtApkSize(app.size || 1749509) : fmtApkSize(app.size);
+    $('softwareNote').textContent = app.note;
+    $('softwareQr').hidden = !app.android;
+    $('softwareQrTip').hidden = !app.android;
+    var link = $('apkDirectLink');
+    link.href = app.url;
+    link.setAttribute('download', app.filename);
+    $('softwareDownloadText').textContent = app.manual ? '下载 StepSnap.exe' : '点击下载';
+    var manual = $('softwareManualLink');
+    manual.hidden = !app.manual;
+    if (app.manual) {
+      manual.href = encodeURI(app.manual);
+      manual.setAttribute('download', app.manualName);
+    }
     modal.classList.add('show');
     document.body.classList.add('modal-open');
-    // 移动端：弹窗会覆盖侧边栏，先收起避免叠层
+    $('appModalClose').focus();
     if (window.innerWidth <= 1024) $('sidebar').classList.remove('open');
   }
 
@@ -1142,10 +1210,8 @@ function initAppModal() {
     document.body.classList.remove('modal-open');
   }
 
-  // 入口：JS 可用时弹出二维码弹窗；JS 失效时 href 直接下载 APK（降级）
-  entry.addEventListener('click', function (e) {
-    e.preventDefault();
-    openModal();
+  entries.forEach(function (entry) {
+    entry.addEventListener('click', function () { openModal(entry.getAttribute('data-app')); });
   });
 
   var closeBtn = $('appModalClose');
@@ -1236,7 +1302,7 @@ function fillApkSize() {
 function syncTailSpacer(force) {
   var sp = $('navTailSpacer');
   if (!sp) return;
-  var links = document.querySelectorAll('.sidebar-nav a[data-section]');
+  var links = document.querySelectorAll('.sidebar-nav a[data-section]:not([data-section="selfApps"])');
   if (links.length < 2) return;
   var el = document.getElementById(links[links.length - 2].getAttribute('data-section'));
   if (!el) return;
@@ -1287,97 +1353,6 @@ function renderAppVersion(v) {
   }
   if (noticeEl) noticeEl.textContent = (v && v.versionName) ? 'v' + v.versionName : 'v—';
 
-  var list = $('appLogList');
-  if (!list) return;
-
-  var items = [];
-  if (v && v.versionName) {
-    items.push({ name: v.versionName, released: v.released, changes: v.changes || [], latest: true });
-  }
-  if (v && Array.isArray(v.history)) {
-    v.history.forEach(function (h) { if (h && h.name) items.push(h); });
-  }
-
-  if (!items.length) {
-    list.innerHTML = '<li class="applog-item"><div class="applog-ver">—</div>'
-      + '<ul><li>版本记录暂时无法加载，请稍后刷新页面</li></ul></li>';
-  } else {
-    list.innerHTML = items.map(function (it) {
-      var changes = (it.changes || []).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
-      // 汇总条目（多个版本合并成一条）可用 note 指向明细位置，避免列表无限变长
-      var note = it.note ? '<p class="applog-sub">' + esc(it.note) + '</p>' : '';
-      return '<li class="applog-item">'
-        + '<div class="applog-ver">' + (it.summary ? '' : 'v') + esc(it.name)
-        + '<span class="applog-date">' + esc(it.released || '') + '</span>'
-        + (it.latest ? '<span class="applog-flag">最新</span>' : '')
-        + '</div><ul>' + changes + '</ul>' + note + '</li>';
-    }).join('');
-  }
-
-  // 列表高度变了 → 尾部留白的需求也变（只增不减，安全）
-  if (typeof syncTailSpacer === 'function') syncTailSpacer();
-}
-
-// 客户端版本记录板块：默认收起 → 点击展开 → 30 秒后自动收起
-// ------------------------------------------------------------
-// 内容在 index.html 里（静态），刻意放在 #app 之外 —— render() 每次数据变化都会
-// 重建 #app 的内容，放进去会让展开状态在轮询（5 分钟）时被重置。
-// ============================================================
-var APPLOG_AUTO_COLLAPSE_MS = 30000;   // 展开后的自动收起时长
-
-var _appLogTimer = null;               // 自动收起的定时器
-var _appLogTick = null;                // 倒计时的 1 秒刷新
-
-function _clearAppLogTimers() {
-  if (_appLogTimer) { clearTimeout(_appLogTimer); _appLogTimer = null; }
-  if (_appLogTick) { clearInterval(_appLogTick); _appLogTick = null; }
-}
-
-function collapseAppLog() {
-  var sec = $('appLog');
-  if (!sec) return;
-  sec.classList.remove('open');
-  _clearAppLogTimers();
-  var btn = $('appLogToggle');
-  if (btn) btn.setAttribute('aria-expanded', 'false');
-  var hint = sec.querySelector('.applog-hint');
-  if (hint) hint.textContent = '展开';
-  var cd = $('appLogCd');
-  if (cd) cd.textContent = '';
-}
-
-function expandAppLog() {
-  var sec = $('appLog');
-  if (!sec) return;
-  sec.classList.add('open');
-  _clearAppLogTimers();
-  var btn = $('appLogToggle');
-  if (btn) btn.setAttribute('aria-expanded', 'true');
-  var hint = sec.querySelector('.applog-hint');
-  if (hint) hint.textContent = '收起';
-
-  // 倒计时按「目标时间戳」算差值，而不是每秒自减 —— 后台标签页被节流时依然准确
-  var endAt = Date.now() + APPLOG_AUTO_COLLAPSE_MS;
-  function paint() {
-    var cd = $('appLogCd');
-    if (!cd) return;
-    var left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
-    cd.textContent = left + ' 秒后自动收起';
-  }
-  paint();
-  _appLogTick = setInterval(paint, 1000);
-  _appLogTimer = setTimeout(collapseAppLog, APPLOG_AUTO_COLLAPSE_MS);
-}
-
-function initAppLog() {
-  var btn = $('appLogToggle');
-  if (!btn) return;                     // 页面未包含该板块时静默跳过
-  btn.addEventListener('click', function () {
-    if ($('appLog').classList.contains('open')) collapseAppLog();
-    else expandAppLog();
-  });
-  // 首屏强制落到收起态（含浏览器前进/后退时恢复表单状态的情况）
-  collapseAppLog();
 }
 
 // ============================================================
@@ -1391,8 +1366,8 @@ function initAppLog() {
 
 var APP_NOTICE = {
   // 生效时间窗口。带时区偏移（+08:00）书写，避免不同设备解析出歧义
-  from:  '2026-10-19T00:00:00+08:00',   // 开始显示
-  until: '2026-10-26T23:59:59+08:00'    // 到期后自动失效（本次为发布后一周）
+  from:  '2026-11-05T00:00:00+08:00',   // 开始显示
+  until: '2026-11-08T23:59:59+08:00'    // 三天后不再显示
 };
 
 function initAppNotice() {
@@ -1408,7 +1383,7 @@ function initAppNotice() {
 
   var card = notice.querySelector('.notice-card');
   var secEl = $('appNoticeSec');
-  var DURATION = 5000;   // 自动关闭时长
+  var DURATION = 3000;   // 自动关闭时长
   var DELAY = 700;       // 首屏渲染后再弹出，避免抢注意力
 
   var openTimer = null, tickTimer = null, outTimer = null;
@@ -1455,16 +1430,12 @@ function initAppNotice() {
     if (e.key === 'Escape' && notice.classList.contains('show')) dismiss();
   });
 
-  // 「立即下载」：收起提示后打开二维码下载弹窗
+  // 「查看自开发应用」：关闭提示后进入新板块
   var goBtn = $('appNoticeGo');
   if (goBtn) goBtn.addEventListener('click', function () {
     dismiss();
-    var entry = $('appDownloadEntry');
-    if (entry) entry.click();
-    else {
-      var link = $('apkDirectLink');
-      if (link) window.location.href = link.getAttribute('href');
-    }
+    showSelfApps(true);
+    history.replaceState(null, '', '#selfApps');
   });
 
   openTimer = setTimeout(show, DELAY);
@@ -1489,10 +1460,10 @@ function initAppNotice() {
 
 fetchData();
 refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
+initSelfAppsNav();
 initUserSearch();
 initAppModal();
 initAppNotice();
-initAppLog();
 initReasonJump();
 startClock();
 // 顶栏脱离文档流后需同步占位块高度（首次渲染时副标题文案尚未填充，

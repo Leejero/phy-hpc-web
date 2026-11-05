@@ -10,8 +10,8 @@
   <link rel="stylesheet" href="css/style.css">
   <!-- Statcounter tracking code for https://leejero.github.io/phy-hpc-web/ -->
   <script type="text/javascript">
-  var sc_project=13225872; 
-  var sc_invisible=0; 
+  var sc_project=13225872;
+  var sc_invisible=0;
   var sc_security="d54ffef5";
   </script>
   <script type="text/javascript" src="https://www.statcounter.com/counter/counter.js" async></script>
@@ -46,6 +46,7 @@
   <symbol id="ic-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
   <symbol id="ic-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
   <symbol id="ic-log" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9.5 12h5"/><path d="M9.5 15.5h5"/></symbol>
+  <symbol id="ic-apps" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
 </svg>
 
 <!-- Sidebar -->
@@ -66,18 +67,8 @@
     <a href="#jobs" data-section="jobs"><span class="nav-icon"><svg class="ic"><use href="#ic-jobs"/></svg></span><span>任务列表</span></a>
     <a href="#users" data-section="users"><span class="nav-icon"><svg class="ic"><use href="#ic-users"/></svg></span><span>用户资源</span></a>
     <a href="#online" data-section="online"><span class="nav-icon"><svg class="ic"><use href="#ic-online"/></svg></span><span>在线终端</span></a>
-    <a href="#appLog" data-section="appLog"><span class="nav-icon"><svg class="ic"><use href="#ic-log"/></svg></span><span>客户端版本记录</span></a>
+    <a href="#selfApps" data-section="selfApps"><span class="nav-icon"><svg class="ic"><use href="#ic-apps"/></svg></span><span>自开发应用</span></a>
   </nav>
-<div class="sidebar-divider"></div>
-
-<div class="sidebar-extra">
-    <a href="INCAR.html" target="_blank" rel="noopener noreferrer">
-        <span><svg class="ic"><use href="#ic-incar"/></svg></span><span>INCAR 手册</span>
-    </a>
-    <a href="download/PhyHPC-Monitor.apk" id="appDownloadEntry" role="button" aria-haspopup="dialog" aria-controls="appModal">
-        <span><svg class="ic"><use href="#ic-phone"/></svg></span><span>手机端 App</span>
-    </a>
-</div>
   <div class="sidebar-footer">@Leejero · HPC 监控系统</div>
 </aside>
 
@@ -106,28 +97,46 @@
     <div class="loading" id="loader"><div class="spinner"></div>正在获取集群数据...</div>
   </div>
 
-  <!-- 客户端版本记录（页面最下）
-       刻意放在 #app 之外：render() 每次数据变化都会重建 #app 的整个内容，
-       放进去会导致展开状态被重置（轮询周期 5 分钟）。
-       交互（默认收起 → 点击展开 → 30 秒后自动收起）见 main.js 的 initAppLog() -->
-  <section class="container applog-wrap" id="appLog">
-    <button class="applog-head" id="appLogToggle" type="button" aria-expanded="false" aria-controls="appLogBody">
-      <span class="applog-name"><svg class="ic" aria-hidden="true"><use href="#ic-log"/></svg> 客户端版本记录</span>
-      <span class="applog-side">
-        <span class="applog-cd" id="appLogCd"></span>
-        <span class="applog-hint">展开</span>
-        <span class="applog-caret" aria-hidden="true">▾</span>
-      </span>
-    </button>
-    <div class="applog-body" id="appLogBody">
-      <div class="applog-inner">
-        <div class="applog-card">
-          <ul class="applog-list" id="appLogList">
-            
-          </ul>
-          <p class="applog-note">展开 30 秒后自动收起</p>
-        </div>
+  <!-- 自开发应用：独立于集群看板，侧栏入口切换显示 -->
+  <section class="container apps-page" id="selfApps" aria-labelledby="selfAppsTitle" hidden>
+    <div class="apps-heading">
+      <div>
+        <div class="apps-eyebrow">DEVELOPED BY LEEJERO</div>
+        <h2 id="selfAppsTitle">自开发应用</h2>
+        <p>面向科研与效率工作的实用工具，选择平台获取应用。</p>
       </div>
+      <a class="apps-back" href="#overview" id="backDashboard"><svg class="ic"><use href="#ic-overview"/></svg> 返回集群看板</a>
+    </div>
+    <div class="apps-columns">
+      <section class="apps-column" aria-labelledby="webAppsTitle">
+        <div class="apps-column-head web"><svg class="ic"><use href="#ic-incar"/></svg><h3 id="webAppsTitle">网页</h3><span>WEB</span></div>
+        <a class="app-item" href="INCAR.html" target="_blank" rel="noopener noreferrer">
+          <span class="app-icon web"><svg class="ic"><use href="#ic-incar"/></svg></span>
+          <span class="app-item-text"><strong>INCAR 手册</strong><small>VASP 输入参数中文速查</small></span>
+          <span class="app-open">打开 <span aria-hidden="true">↗</span></span>
+        </a>
+      </section>
+      <section class="apps-column" aria-labelledby="androidAppsTitle">
+        <div class="apps-column-head android"><svg class="ic"><use href="#ic-phone"/></svg><h3 id="androidAppsTitle">安卓 App</h3><span>ANDROID</span></div>
+        <button class="app-item" type="button" data-app="hpc" aria-haspopup="dialog" aria-controls="appModal">
+          <span class="app-icon android"><svg class="ic"><use href="#ic-phone"/></svg></span>
+          <span class="app-item-text"><strong>HPC 应用监管系统</strong><small>物电 HPC 集群监控</small></span>
+          <span class="app-open">详情 <span aria-hidden="true">›</span></span>
+        </button>
+      </section>
+      <section class="apps-column" aria-labelledby="windowsAppsTitle">
+        <div class="apps-column-head windows"><svg class="ic"><use href="#ic-apps"/></svg><h3 id="windowsAppsTitle">Windows 应用</h3><span>WINDOWS</span></div>
+        <button class="app-item" type="button" data-app="stepsnap" aria-haspopup="dialog" aria-controls="appModal">
+          <span class="app-icon windows"><svg class="ic"><use href="#ic-apps"/></svg></span>
+          <span class="app-item-text"><strong>StepSnap</strong><small>步骤录制与图文教程制作</small></span>
+          <span class="app-open">详情 <span aria-hidden="true">›</span></span>
+        </button>
+        <button class="app-item" type="button" data-app="lwmg" aria-haspopup="dialog" aria-controls="appModal">
+          <span class="app-icon windows"><svg class="ic"><use href="#ic-apps"/></svg></span>
+          <span class="app-item-text"><strong>LWMG</strong><small>WorkBuddy 记忆治理</small></span>
+          <span class="app-open">详情 <span aria-hidden="true">›</span></span>
+        </button>
+      </section>
     </div>
   </section>
 
@@ -144,28 +153,34 @@
 <!-- Back to top -->
 <button class="back-top" id="backTop" title="回到顶端" aria-label="回到顶端">↑</button>
 
-<!-- 手机端 App 下载弹窗（扫码安装 Android 客户端） -->
+<!-- 自开发应用详情：安卓显示二维码，Windows 仅显示详情与下载按钮 -->
 <div class="modal-overlay" id="appModal">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
+  <div class="modal-card software-modal" role="dialog" aria-modal="true" aria-labelledby="appModalTitle">
     <button class="modal-close" id="appModalClose" type="button" aria-label="关闭">✕</button>
-    <h3 class="modal-title" id="appModalTitle"><svg class="ic"><use href="#ic-phone"/></svg> 手机端 App</h3>
-    <p class="modal-sub">物电 HPC 集群监控 · Android 客户端 <span id="appVerName">v—</span></p>
-
-    <div class="qr-frame">
-      <img src="download/qrcode-app.png" alt="扫码下载物电 HPC 集群监控 APK 安装包" width="200" height="200">
+    <div class="software-modal-body">
+      <div class="software-info">
+        <span class="software-platform" id="softwarePlatform"></span>
+        <h3 class="software-title" id="appModalTitle"></h3>
+        <p class="software-description" id="softwareDescription"></p>
+        <dl class="software-meta">
+          <div><dt>最后更新</dt><dd id="softwareDate"></dd></div>
+          <div><dt>文件大小</dt><dd id="softwareSize"></dd></div>
+        </dl>
+        <p class="software-note" id="softwareNote"></p>
+        <span id="appVerName" hidden></span><span id="appVerNote" hidden></span>
+      </div>
+      <div class="software-action">
+        <div class="qr-frame" id="softwareQr"><img src="download/qrcode-app.png" alt="扫码下载物电 HPC 集群监控 APK 安装包" width="180" height="180"></div>
+        <p class="qr-tip" id="softwareQrTip">手机扫码下载安装</p>
+        <a class="modal-btn" id="apkDirectLink" href="download/PhyHPC-Monitor.apk" download>
+          <svg class="ic"><use href="#ic-download"/></svg> <span id="softwareDownloadText">点击下载</span>
+        </a>
+        <a class="modal-btn ghost" id="softwareManualLink" href="download/StepSnap_%E7%94%A8%E6%88%B7%E6%89%8B%E5%86%8C.md" download="StepSnap_用户手册.md" hidden>
+          <svg class="ic"><use href="#ic-incar"/></svg> 下载使用手册（MD）
+        </a>
+        <button class="modal-btn ghost" id="appCopyLink" type="button">复制下载链接</button>
+      </div>
     </div>
-    <p class="qr-tip">用手机相机或浏览器扫码，即可下载安装</p>
-
-    <a class="modal-btn" id="apkDirectLink" href="download/PhyHPC-Monitor.apk" download="物电HPC集群监控.apk">
-      <svg class="ic"><use href="#ic-download"/></svg> 直接下载 APK（<span data-apk-size>1.0 MB</span>）
-    </a>
-    <button class="modal-btn ghost" id="appCopyLink" type="button">复制下载链接</button>
-
-    <ul class="modal-notes">
-      <li>当前版本 <span id="appVerNote">v—</span></li>
-      <li>今后新版 App 均在此二维码处刷新</li>
-      <li>适用系统：Android 7.0 及以上</li>
-    </ul>
   </div>
 </div>
 
@@ -173,13 +188,13 @@
 <div class="notice-overlay" id="appNotice">
   <div class="notice-card" role="dialog" aria-modal="true" aria-labelledby="appNoticeTitle">
     <button class="notice-close" id="appNoticeClose" type="button" aria-label="关闭">✕</button>
-    <div class="notice-badge"><svg class="ic"><use href="#ic-phone"/></svg></div>
-    <h3 class="notice-title" id="appNoticeTitle">手机端 App 已迭代</h3>
-    <p class="notice-text">物电 HPC 集群监控 <b><span id="noticeVer">v—</span></b> 已发布，内置 INCAR 手册升级 v2.0：内容全面复核修正、新增参数详解、搜索更快，欢迎更新。</p>
+    <div class="notice-badge"><svg class="ic"><use href="#ic-apps"/></svg></div>
+    <h3 class="notice-title" id="appNoticeTitle">「自开发应用」板块上线</h3>
+    <p class="notice-text">网页、安卓 App 与 Windows 应用已集中整理。可在此打开 <b>INCAR 手册</b>，获取 <b>HPC 应用监管系统</b>，以及 <b>StepSnap</b>、<b>LWMG</b> 工具。</p>
     <button class="notice-btn" id="appNoticeGo" type="button">
-      <svg class="ic"><use href="#ic-download"/></svg> 立即下载
+      <svg class="ic"><use href="#ic-apps"/></svg> 查看自开发应用
     </button>
-    <p class="notice-countdown">本提示 <span id="appNoticeSec">5</span> 秒后自动关闭</p>
+    <p class="notice-countdown">本提示 <span id="appNoticeSec">3</span> 秒后自动关闭</p>
   </div>
 </div>
 

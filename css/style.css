@@ -698,4 +698,53 @@ body.modal-open { overflow: hidden; }
 .nav-tail-spacer { flex: none; height: 0; }
 
 /* 版本记录里的汇总脚注（指向逐条明细） */
-.applog-sub { margin: 6px 0 0; padding-left: 2px; font-size: .78rem; color: var(--text2); }
+/* ===== 自开发应用（独立页面） ===== */
+[hidden] { display: none !important; }
+.apps-page { padding-top: 34px; max-width: 1280px; margin: 0 auto; width: 100%; }
+.apps-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:28px; }
+.apps-eyebrow { color:var(--primary); font-size:.68rem; font-weight:700; letter-spacing:1.8px; margin-bottom:7px; }
+.apps-heading h2 { font-size:1.85rem; line-height:1.3; letter-spacing:-.5px; }
+.apps-heading p { color:var(--text2); font-size:.86rem; margin-top:7px; }
+.apps-back { display:flex; align-items:center; gap:7px; color:var(--primary); font-size:.8rem; text-decoration:none; padding:8px 12px; border:1px solid rgba(79,110,247,.16); border-radius:9px; background:rgba(255,255,255,.6); white-space:nowrap; }
+.apps-back:hover { background:var(--primary-light); }
+.apps-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:stretch; }
+.apps-column { background:rgba(255,255,255,.7); border:1px solid rgba(79,110,247,.12); border-radius:16px; padding:20px 16px 16px; box-shadow:var(--shadow); height:238px; }
+.apps-column-head { display:flex; align-items:center; gap:8px; padding:0 5px 16px; margin-bottom:4px; border-bottom:1px solid rgba(79,110,247,.1); }
+.apps-column-head .ic { width:20px; height:20px; }
+.apps-column-head h3 { font-size:1rem; font-weight:700; }
+.apps-column-head > span { margin-left:auto; font-size:.6rem; letter-spacing:1px; color:var(--text2); }
+.apps-column-head.web { color:#4f6ef7; }
+.apps-column-head.android { color:#16a36a; }
+.apps-column-head.windows { color:#7c3aed; }
+.app-item { display:flex; align-items:center; gap:12px; width:100%; padding:17px 5px; border:0; border-bottom:1px solid rgba(79,110,247,.08); background:none; color:var(--text); font:inherit; text-align:left; text-decoration:none; cursor:pointer; border-radius:8px; transition:background .2s; }
+.app-item:last-child { border-bottom-color:transparent; }
+.app-item:hover { background:rgba(79,110,247,.06); }
+.app-item:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.app-icon { display:flex; align-items:center; justify-content:center; width:46px; height:46px; border-radius:13px; flex:none; }
+.app-icon .ic { width:24px; height:24px; }
+.app-icon.web { color:#4f6ef7; background:#e8edff; }
+.app-icon.android { color:#158653; background:#e2f6eb; }
+.app-icon.windows { color:#7c3aed; background:#f0e9ff; }
+.app-item-text { min-width:0; display:flex; flex-direction:column; gap:4px; }
+.app-item-text strong { font-size:.9rem; font-weight:700; }
+.app-item-text small { font-size:.72rem; color:var(--text2); line-height:1.5; }
+.app-open { margin-left:auto; font-size:.72rem; color:var(--primary); white-space:nowrap; }
+.app-open span { font-size:1.1rem; margin-left:3px; }
+.software-modal { max-width:660px; padding:32px; text-align:left; }
+.software-modal-body { display:flex; gap:28px; align-items:center; }
+.software-info { flex:1; min-width:0; }
+.software-platform { color:var(--primary); font-size:.63rem; font-weight:700; letter-spacing:1.5px; }
+.software-title { margin-top:8px; font-size:1.4rem; line-height:1.35; }
+.software-description { color:var(--text2); font-size:.83rem; line-height:1.85; margin-top:12px; }
+.software-meta { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px; padding:15px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.software-meta dt { color:var(--text2); font-size:.69rem; }
+.software-meta dd { margin-top:3px; font-size:.85rem; font-weight:600; }
+.software-note { color:var(--text2); font-size:.72rem; line-height:1.75; margin-top:13px; }
+.software-action { width:190px; flex:none; text-align:center; }
+.software-action .qr-frame { margin:0 0 7px; padding:7px; }
+.software-action .qr-frame img { width:166px; height:166px; }
+.software-action .qr-tip { margin:0 0 15px; font-size:.72rem; }
+.software-action .modal-btn { margin-top:0; }
+.software-action .modal-btn.ghost { margin-top:8px; font-size:.75rem; padding:8px; }
+@media(max-width:900px) { .apps-columns { gap:12px; } .apps-column { padding:16px 12px; } .app-item { gap:9px; } .app-icon { width:40px; height:40px; } .app-open { display:none; } }
+@media(max-width:700px) { .apps-heading { align-items:flex-start; flex-direction:column; gap:14px; } .apps-columns { grid-template-columns:1fr; } .apps-column { height:auto; min-height:220px; } .app-item { padding:14px 5px; } .app-open { display:block; } .software-modal-body { flex-direction:column; gap:22px; } .software-action { width:100%; } .software-modal { padding:28px 22px 22px; } }
