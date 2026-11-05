@@ -1192,7 +1192,7 @@ function initAppModal() {
     var link = $('apkDirectLink');
     link.href = app.url;
     link.setAttribute('download', app.filename);
-    $('softwareDownloadText').textContent = app.manual ? '下载 StepSnap.exe' : '点击下载';
+    $('softwareDownloadText').textContent = '下载 ' + app.filename;
     var manual = $('softwareManualLink');
     manual.hidden = !app.manual;
     if (app.manual) {
@@ -1201,7 +1201,8 @@ function initAppModal() {
     }
     modal.classList.add('show');
     document.body.classList.add('modal-open');
-    $('appModalClose').focus();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    modal.querySelector('.software-modal').focus({ preventScroll: true });
     if (window.innerWidth <= 1024) $('sidebar').classList.remove('open');
   }
 

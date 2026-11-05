@@ -730,7 +730,7 @@ body.modal-open { overflow: hidden; }
 .app-item-text small { font-size:.72rem; color:var(--text2); line-height:1.5; }
 .app-open { margin-left:auto; font-size:.72rem; color:var(--primary); white-space:nowrap; }
 .app-open span { font-size:1.1rem; margin-left:3px; }
-.software-modal { max-width:660px; padding:32px; text-align:left; }
+.software-modal { max-width:660px; padding:32px; text-align:left; outline:none; }
 .software-modal-body { display:flex; gap:28px; align-items:center; }
 .software-info { flex:1; min-width:0; }
 .software-platform { color:var(--primary); font-size:.63rem; font-weight:700; letter-spacing:1.5px; }
