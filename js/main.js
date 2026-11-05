@@ -1141,38 +1141,6 @@ var SOFTWARE_APPS = {
   }
 };
 
-// ============================================================
-// 自开发应用页：独立于看板显示，隐藏时不参与锚点滚动计算
-// ============================================================
-function showSelfApps(show) {
-  var page = $('selfApps');
-  if (!page) return;
-  ['app'].forEach(function (id) { var el = $(id); if (el) el.hidden = show; });
-  page.hidden = !show;
-  document.body.classList.toggle('apps-view', show);
-  setSidebarActive(show ? 'selfApps' : 'overview');
-  window.scrollTo(0, 0);
-}
-
-function initSelfAppsNav() {
-  var entry = document.querySelector('[data-section="selfApps"]');
-  var back = $('backDashboard');
-  if (!entry || !back) return;
-  entry.addEventListener('click', function (e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    if (window.innerWidth <= 1024) $('sidebar').classList.remove('open');
-    showSelfApps(true);
-    history.replaceState(null, '', '#selfApps');
-  }, true);
-  back.addEventListener('click', function (e) {
-    e.preventDefault();
-    showSelfApps(false);
-    history.replaceState(null, '', '#overview');
-  });
-  if (location.hash === '#selfApps') showSelfApps(true);
-}
-
 function initAppModal() {
   var modal = $('appModal');
   var entries = document.querySelectorAll('[data-app]');
@@ -1303,7 +1271,7 @@ function fillApkSize() {
 function syncTailSpacer(force) {
   var sp = $('navTailSpacer');
   if (!sp) return;
-  var links = document.querySelectorAll('.sidebar-nav a[data-section]:not([data-section="selfApps"])');
+  var links = document.querySelectorAll('.sidebar-nav a[data-section]');
   if (links.length < 2) return;
   var el = document.getElementById(links[links.length - 2].getAttribute('data-section'));
   if (!el) return;
@@ -1435,8 +1403,7 @@ function initAppNotice() {
   var goBtn = $('appNoticeGo');
   if (goBtn) goBtn.addEventListener('click', function () {
     dismiss();
-    showSelfApps(true);
-    history.replaceState(null, '', '#selfApps');
+    document.querySelector('[data-section="selfApps"]').click();
   });
 
   openTimer = setTimeout(show, DELAY);
@@ -1461,7 +1428,6 @@ function initAppNotice() {
 
 fetchData();
 refreshTimer = setInterval(fetchData, REFRESH_INTERVAL);
-initSelfAppsNav();
 initUserSearch();
 initAppModal();
 initAppNotice();
