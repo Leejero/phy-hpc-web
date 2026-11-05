@@ -12,8 +12,8 @@ const APP_VER = (() => {
   try { return JSON.parse(require('fs').readFileSync(path.join(ROOT, 'data', 'app_version.json'), 'utf8')); }
   catch (e) { return {}; }
 })();
-/* APK 体积显示验收：动态读取 + 十进制口径 + 取不到时的静态兜底
-   用法：与 python -m http.server 8793（root=_public-repo-tmp）同一条命令内启停 */
+/* 下载弹窗验收：按钮只写「下载」，文件名仅用于保存；体积独立显示为十进制 MB。
+   用法：由 tests/run-web.js 注入本地静态服务地址。 */
 const { chromium } = require('playwright');
 const fs = require('fs');
 // ORIGIN 见文件头
@@ -58,10 +58,12 @@ const check = (n, ok, x) => {
     const { ctx, page, logs, errs } = await open();
     const t = await btnText(page);
     console.log('   按钮文案: ' + t);
-    check('按钮显示 1.0 MB（十进制，与实际字节数一致）', /（1\.0 MB）/.test(t), t);
-    check('不再出现旧的 0.95 MB', !/0\.95/.test(t), t);
-    check('静态兜底也已是 1.0 MB', !/0\.9/.test(await page.evaluate(() =>
-      document.documentElement.outerHTML.match(/data-apk-size[^>]*>([^<]*)</)[1])), '');
+    check('下载按钮仅显示「下载」', t === '下载', t);
+    check('按钮不附带文件名或体积', !/\.apk|MB/.test(t), t);
+    check('文件大小独立显示为十进制 MB', await page.evaluate(() => {
+      document.querySelector('[data-app="hpc"]').click();
+      return /^\d+(\.\d+)? MB$/.test(document.getElementById('softwareSize').textContent.trim());
+    }));
     check('无 JS 报错', errs.length === 0, errs.join(' | '));
 
     // 口径函数本身（边界值）
@@ -88,8 +90,11 @@ const check = (n, ok, x) => {
     const t = await btnText(page);
     console.log('   按钮文案: ' + t);
     console.log('   控制台: ' + JSON.stringify(logs.filter(l => /体积读取失败/.test(l))));
-    check('按钮仍显示可读体积（静态兜底 1.0 MB）', /（1\.0 MB）/.test(t), t);
-    check('给出了可定位的告警', logs.some(l => /体积读取失败/.test(l)), '');
+    check('体积读取失败时下载按钮仍保持简洁', t === '下载', t);
+    check('体积读取失败时仍有静态兜底', await page.evaluate(() => {
+      document.querySelector('[data-app="hpc"]').click();
+      return document.getElementById('softwareSize').textContent.trim().length > 0;
+    }));
     check('无未捕获异常', errs.length === 0, errs.join(' | '));
     await ctx.close();
   }
@@ -103,7 +108,7 @@ const check = (n, ok, x) => {
     page.on('pageerror', e => errs.push(String(e)));
     await page.goto(ORIGIN + '/index.html', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1800);
-    await page.evaluate(() => { document.getElementById('appDownloadEntry').click(); });
+    await page.evaluate(() => { document.querySelector('[data-app="hpc"]').click(); });
     await page.waitForTimeout(400);
     const t = await page.evaluate(() => {
       const b = document.getElementById('apkDirectLink');
@@ -115,9 +120,38 @@ const check = (n, ok, x) => {
       return { visible: r.width > 0 && r.height > 0, height: Math.round(r.height) };
     });
     console.log('   移动端按钮: ' + t + ' 可见=' + shown.visible);
-    check('移动端弹窗内体积正确', /（1\.0 MB）/.test(t), t);
+    check('移动端下载按钮仅显示「下载」', t === '下载', t);
     check('按钮正常可见', shown.visible === true, JSON.stringify(shown));
     check('无 JS 报错', errs.length === 0, errs.join(' | '));
+    await ctx.close();
+  }
+
+  // ---------- 场景四：应用版本与下载按钮 ----------
+  console.log('===== 场景四 版本与按钮 =====');
+  {
+    const { ctx, page, errs } = await open();
+    await page.waitForFunction(version => document.querySelector('[data-app="hpc"] small').textContent.includes('v' + version), APP_VER.versionName);
+    const cards = await page.evaluate(() => Object.fromEntries(['hpc', 'stepsnap', 'lwmg'].map(key => [
+      key, document.querySelector('[data-app="' + key + '"] small').textContent.trim()
+    ])));
+    check('HPC 条目版本为 v' + APP_VER.versionName, cards.hpc.endsWith('v' + APP_VER.versionName), cards.hpc);
+    check('StepSnap 条目使用正式发布版本 v1.0', cards.stepsnap.endsWith('v1.0'), cards.stepsnap);
+    check('LWMG 条目版本为 v1.2.0', cards.lwmg.endsWith('v1.2.0'), cards.lwmg);
+    for (const key of ['hpc', 'stepsnap', 'lwmg']) {
+      await page.locator('[data-app="' + key + '"]').click();
+      await page.waitForTimeout(80);
+      const state = await page.evaluate(() => ({
+        version: document.getElementById('softwareVersion').textContent.trim(),
+        btn: document.getElementById('softwareDownloadText').textContent.trim(),
+        overflow: document.documentElement.scrollWidth > window.innerWidth
+      }));
+      check(key + ' 弹窗显示版本号', /^v\d+\.\d+/.test(state.version), state.version);
+      check(key + ' 下载按钮无文件名后缀', state.btn === '下载', state.btn);
+      check(key + ' 桌面端无横向溢出', !state.overflow);
+      await page.locator('#appModalClose').click();
+      await page.waitForTimeout(350);
+    }
+    check('版本交互无 JS 报错', errs.length === 0, errs.join(' | '));
     await ctx.close();
   }
 

@@ -103,7 +103,8 @@ function runProbe(file, env) {
 }
 
 (async () => {
-  const fast = process.argv.includes('--fast');
+  const only = process.argv.find(a => a.startsWith('--only='));
+  const fast = process.argv.includes('--fast') || Boolean(only);
   const stamp = buildFixture();
   const srv = await startServer();
   const port = srv.address().port;
@@ -114,7 +115,12 @@ function runProbe(file, env) {
   console.log('');
 
   const list = ORDER.filter(f => fs.existsSync(path.join(__dirname, 'web', f)))
+    .filter(f => !only || f === only.slice('--only='.length))
     .filter(f => !(fast && SLOW.indexOf(f) >= 0));
+  if (only && !list.length) {
+    srv.close();
+    throw new Error('探针不存在或属于慢探针：' + only.slice('--only='.length));
+  }
   const results = [];
   for (const f of list) {
     process.stdout.write('▶ ' + f + ' ... ');

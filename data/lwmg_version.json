@@ -1,0 +1,12 @@
+{
+  "versionName": "1.2.0",
+  "versionCode": 2,
+  "released": "2026-11-05",
+  "url": "download/LWMG.exe",
+  "pageUrl": "https://leejero.github.io/phy-hpc-web/#selfApps",
+  "changes": [
+    "新增：双击项目台账或记忆缺口行，在资源管理器中打开项目根目录",
+    "新增：双击记忆台账行，打开所在目录并选中对应的 Markdown 文件",
+    "新增：检测到更高版本时，所有页面顶栏显示新版箭头并链接到下载页"
+  ]
+}

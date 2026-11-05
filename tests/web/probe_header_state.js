@@ -96,11 +96,21 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     check(`${w}px dispatchMeasure 也不会自作主张改状态`, side.after2 === side.after, side.after2);
     check(`${w}px 收起高度明显小于展开高度`, side.hCollapsed < side.hExpand - 40, side.hCollapsed + ' vs ' + side.hExpand);
 
+    // 搜索浮层属于顶栏：下滚时必须同步关闭，回顶时不得无操作地自行弹出。
+    const username = RAW.users && RAW.users[0] && RAW.users[0].username;
+    check(`${w}px 测试样本包含可搜索用户`, typeof username === 'string' && username.length > 0, username);
+    if (username) {
+      await page.locator('#userSearchInput').fill(username);
+      await sleep(250);
+      check(`${w}px 输入用户名后搜索浮层展开`, await page.locator('#userSearchResults').isVisible());
+    }
+
     // 滚动 → 收起；回到顶部 → 展开
     await page.evaluate(() => window.scrollTo(0, 600));
     await sleep(600);
     const down = await snap();
     check(`${w}px 下滚后顶栏收起`, down.scrolled === true && down.headerH < side.hExpand - 40, 'scrolled=' + down.scrolled + ' h=' + down.headerH);
+    if (username) check(`${w}px 下滚后搜索浮层同步关闭`, !(await page.locator('#userSearchResults').isVisible()));
     await page.evaluate(() => window.scrollTo(0, 0));
     // ⚠ 两个坑叠加，必须同时等：
     //   ① 页面有 `scroll-behavior: smooth`，scrollTo(0,0) 是**动画**回顶（实测 150ms 时仍在 y=172）；
@@ -120,6 +130,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     await sleep(120);
     const top = await snap();
     check(`${w}px 回到顶部后顶栏展开`, top.scrolled === false, 'scrolled=' + top.scrolled + ' y=' + top.y);
+    if (username) check(`${w}px 回顶后搜索浮层保持关闭`, !(await page.locator('#userSearchResults').isVisible()));
     check(`${w}px 回顶后仍与占位块等高`, Math.abs(top.headerH - top.spacerH) <= 1, top.headerH + ' vs ' + top.spacerH);
     check(`${w}px 无 JS 报错`, errs.length === 0, errs.join(' | '));
     await ctx.close();

@@ -1107,9 +1107,15 @@ function initUserSearch() {
     if (results.classList.contains('show')) positionResults();
   });
 
-  // 结果框为 fixed 定位，页面滚动时需跟随输入框重定位，否则二者脱离
+  // 结果框虽为 fixed 定位，仍属于顶栏搜索界面。页面滚动时直接关闭，
+  // 不能继续跟随输入框重定位，否则顶栏收起后结果框会悬浮在正文中。
+  // 回顶后保持关闭；用户再次输入时由 input 事件重新展开。
   window.addEventListener('scroll', function () {
-    if (results.classList.contains('show')) positionResults();
+    if (_searchTimer) {
+      clearTimeout(_searchTimer);
+      _searchTimer = null;
+    }
+    results.classList.remove('show');
   }, { passive: true });
 }
 
@@ -1119,22 +1125,22 @@ function initUserSearch() {
 
 var SOFTWARE_APPS = {
   hpc: {
-    name: 'HPC 应用监管系统', platform: 'ANDROID 应用',
+    name: 'HPC 应用监管系统', platform: 'ANDROID 应用', version: '1.1.3',
     description: '物电 HPC 集群监控的安卓客户端。查看集群核心、节点、分区资源、任务队列与在线状态，并内置 INCAR 参数手册。',
     date: '2026-10-19', url: 'download/PhyHPC-Monitor.apk', filename: '物电HPC集群监控.apk',
     note: '适用于 Android 7.0 及以上系统。也可直接下载 APK 安装包。', android: true,
     manual: 'download/HPC应用监管系统_用户手册.md', manualName: 'HPC应用监管系统_用户手册.md'
   },
   stepsnap: {
-    name: 'StepSnap', platform: 'WINDOWS 应用',
+    name: 'StepSnap', platform: 'WINDOWS 应用', version: '1.0',
     description: '自动记录鼠标与键盘操作，捕捉屏幕并生成步骤，支持截图标注、编辑与导出，快速制作图文操作教程。',
     date: '2026-11-05', url: 'download/StepSnap.exe', filename: 'StepSnap.exe', size: 27007768,
     note: 'Windows 10 / 11 · 单文件 EXE，双击即可使用。',
     manual: 'download/StepSnap_用户手册.md', manualName: 'StepSnap_用户手册.md'
   },
   lwmg: {
-    name: 'LWMG', platform: 'WINDOWS 应用',
-    description: 'WorkBuddy 项目生命周期治理与记忆维护工具。盘点项目活跃状态、检索记忆内容，并导出项目与记忆治理台账。',
+    name: 'LWMG', platform: 'WINDOWS 应用', version: '1.2.0',
+    description: 'WorkBuddy 项目生命周期治理与记忆维护工具。盘点项目活跃状态、检索记忆内容，并导出项目与记忆治理台账。双击台账行可定位项目或记忆文件。',
     date: '2026-11-05', url: 'download/LWMG.exe', filename: 'LWMG.exe', size: 13426315,
     note: 'Windows 10 / 11 · 单文件 EXE，需 WebView2 Runtime。',
     manual: 'download/LWMG_用户手册.md', manualName: 'LWMG_用户手册.md'
@@ -1152,6 +1158,7 @@ function initAppModal() {
     $('appModalTitle').textContent = app.name;
     $('softwarePlatform').textContent = app.platform;
     $('softwareDescription').textContent = app.description;
+    $('softwareVersion').textContent = 'v' + app.version;
     $('softwareDate').textContent = app.date;
     $('softwareSize').textContent = app.android ? fmtApkSize(app.size || 1749509) : fmtApkSize(app.size);
     $('softwareNote').textContent = app.note;
@@ -1160,7 +1167,7 @@ function initAppModal() {
     var link = $('apkDirectLink');
     link.href = app.url;
     link.setAttribute('download', app.filename);
-    $('softwareDownloadText').textContent = '下载 ' + app.filename;
+    $('softwareDownloadText').textContent = '下载';
     var manual = $('softwareManualLink');
     manual.hidden = !app.manual;
     if (app.manual) {
@@ -1226,6 +1233,23 @@ function initAppModal() {
 
   fillApkSize();
   loadAppVersion();   // 版本号与版本记录由 data/app_version.json 填充（不等它，避免阻塞首屏）
+  loadLwmgVersion();
+}
+
+// LWMG 的版本信息与客户端更新提示共用同一份清单。
+function loadLwmgVersion() {
+  fetch('data/lwmg_version.json', { cache: 'no-cache' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (v) {
+      if (!v || typeof v.versionName !== 'string') return;
+      SOFTWARE_APPS.lwmg.version = v.versionName;
+      SOFTWARE_APPS.lwmg.date = v.released || SOFTWARE_APPS.lwmg.date;
+      SOFTWARE_APPS.lwmg.url = v.url || SOFTWARE_APPS.lwmg.url;
+      SOFTWARE_APPS.lwmg.note = 'v' + v.versionName + ' · Windows 10 / 11 · 单文件 EXE，需 WebView2 Runtime。';
+      var entry = document.querySelector('[data-app="lwmg"] small');
+      if (entry) entry.textContent = 'WorkBuddy 记忆治理 · v' + v.versionName;
+    })
+    .catch(function () { /* 清单未上线时沿用页面静态信息 */ });
 }
 
 // APK 体积：读实际文件的 Content-Length，不写死。
@@ -1311,6 +1335,12 @@ function loadAppVersion() {
 }
 
 function renderAppVersion(v) {
+  if (v && v.versionName) {
+    SOFTWARE_APPS.hpc.version = v.versionName;
+    SOFTWARE_APPS.hpc.date = v.released || SOFTWARE_APPS.hpc.date;
+    var entry = document.querySelector('[data-app="hpc"] small');
+    if (entry) entry.textContent = '物电 HPC 集群监控 · v' + v.versionName;
+  }
   var nameEl = $('appVerName');
   var noteEl = $('appVerNote');
   var noticeEl = $('noticeVer');
